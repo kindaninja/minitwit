@@ -68,6 +68,48 @@ app.get('/public', async function(req, res) {
     });
 });
 
+// Register page
+app.get('/register', function(req, res) {
+    res.render('pages/register', {
+        username: '',
+        email: '',
+    });
+});
+
+// Register handler
+app.post('/register', async function(req, res) {
+    const username = req.body.username;
+    const email = req.body.email;
+    const password = req.body.password;
+    const password2 = req.body.password2;
+    let error;
+    if(!username) {
+        error = 'You have to enter a username';
+    } else if (!email || !email.includes('@')) {
+        error = 'You have to enter a valid email address';
+    } else if (!password) {
+        error = 'You have to enter a password';
+    } else if (password !== password2) {
+        error = 'The two passwords do not match';
+    } else if (await selectOne('SELECT 1 FROM user WHERE username = ?',[username])) {
+        error = 'The username is already taken';
+    } else {
+        await insertOne(
+            'INSERT INTO user(username, email, pw_hash) VALUES(?, ?, ?)',
+            [username, email, password.lameHash()]);
+        return res.render('pages/login', {
+            username: username,
+            flashes: ['You were successfully registered and can login now']
+        });
+
+    }
+    res.render('pages/register', {
+        username: username,
+        email: email,
+        error: error
+    });
+});
+
 // User timeline page
 app.get('/:username', async function(req, res) {
     const { username } = req.params;
@@ -143,4 +185,19 @@ function insertOne(query, params) {
             resolve(this.lastID)
         });
     });
+}
+
+// Lame password hash function
+// TODO Use proper hashing library, bcrypt maybe?
+String.prototype.lameHash = function() {
+    var hash = 0;
+    if (this.length == 0) {
+        return hash;
+    }
+    for (var i = 0; i < this.length; i++) {
+        var char = this.charCodeAt(i);
+        hash = ((hash<<5)-hash)+char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return 'lame' + hash + 'hash';
 }
