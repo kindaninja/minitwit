@@ -110,6 +110,55 @@ app.post('/register', async function(req, res) {
     });
 });
 
+// Login page
+app.get('/login', function(req, res) {
+    res.render('pages/login', {
+        username: '',
+    });
+});
+
+// Login handler
+app.post('/login', async function(req, res) {
+    const username = req.body.username;
+    const password = req.body.password;
+    let error;
+    if(!username) {
+        error = 'You have to enter a username';
+    } else if (!password) {
+        error = 'You have to enter a password';
+    } else {
+        const user = await selectOne('SELECT * FROM user WHERE username = ?',[username])
+        if(!user) {
+            error = 'Invalid username';
+        } else if (user.pw_hash !== password.lameHash()) {
+            error = 'Invalid password';
+        } else {
+            req.session.user_id = user.user_id;
+            req.session.username = username;
+            let messages = await selectAll(
+                `SELECT message.*, user.* FROM message, user
+                WHERE message.author_id = user.user_id AND (
+                    user.user_id = ? OR
+                    user.user_id IN (
+                        SELECT whom_id FROM follower
+                        WHERE who_id = ?))
+                ORDER BY message.pub_date DESC LIMIT ?`,
+                [req.session.user_id, req.session.user_id, PER_PAGE]
+            );
+            return res.render('pages/timeline', {
+                flashes: ['You were logged in'],
+                session_user_id: req.session.user_id,
+                session_username: req.session.username,
+                messages
+            });
+        }
+    }
+    res.render('pages/login', {
+        username: username,
+        error: error
+    });
+});
+
 // User timeline page
 app.get('/:username', async function(req, res) {
     const { username } = req.params;
