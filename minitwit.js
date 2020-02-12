@@ -68,6 +68,36 @@ app.get('/public', async function(req, res) {
     });
 });
 
+// Add message handler
+app.post('/add_message', async function(req, res) {
+    const user_id = req.session.user_id;
+    const text = req.body.text;
+    if(!user_id) {
+        return res.status(401).send();
+    } else {
+        await insertOne(
+            'INSERT INTO message(author_id, text, pub_date) VALUES(?, ?, ?)',
+            [user_id, text, Date.now()])
+        let messages = await selectAll(
+            `SELECT message.*, user.* FROM message, user
+                WHERE message.author_id = user.user_id AND (
+                    user.user_id = ? OR
+                    user.user_id IN (
+                        SELECT whom_id FROM follower
+                        WHERE who_id = ?))
+                ORDER BY message.pub_date DESC LIMIT ?`,
+            [req.session.user_id, req.session.user_id, PER_PAGE]
+        );
+        return res.render('pages/timeline', {
+            flashes: ['Your message was recorded'],
+            session_user_id: req.session.user_id,
+            session_username: req.session.username,
+            messages: messages,
+            myFeed: true
+        });
+    }
+});
+
 // Register page
 app.get('/register', function(req, res) {
     res.render('pages/register', {
@@ -156,6 +186,15 @@ app.post('/login', async function(req, res) {
     res.render('pages/login', {
         username: username,
         error: error
+    });
+});
+
+// Logout
+app.get('/logout', function(req, res) {
+    req.session.user_id = null;
+    req.session.username = null;
+    res.render('pages/timeline', {
+        flashes: ['You were logged out']
     });
 });
 

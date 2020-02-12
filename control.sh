@@ -8,7 +8,7 @@ if [ $1 = "init" ]; then
     python -c"from minitwit import init_db;init_db()"
 elif [ $1 = "start" ]; then
     echo "Starting minitwit..."
-    nohup python minitwit.py > /tmp/out.log 2>&1 &
+    nohup nodejs minitwit.js > /tmp/out.log 2>&1 &
     echo $! > /tmp/minitwit.pid
 elif [ $1 = "stop" ]; then
     echo "Stopping minitwit..."
