@@ -4,6 +4,9 @@ const app = express();
 // Sessions https://github.com/expressjs/session#readme
 var cookieParser = require('cookie-parser');
 var session = require('express-session');
+var bodyParser = require('body-parser');
+
+app.use(bodyParser.json());
 
 // SQLite3 https://github.com/mapbox/node-sqlite3
 const sqlite3 = require('sqlite3').verbose();
@@ -14,7 +17,30 @@ let db = new sqlite3.Database('/tmp/minitwit.db', (err) => {
     console.log('Connected to the minitwit.db SQlite database.');
 });
 
+// Register handler
+app.post('/register', async function(req, res) {
+    const username = req.body.username;
+    const email = req.body.email;
+    const password = req.body.pwd;
+    console.log(username, email, password);
+    let error;
+    if(!username) {
+        error = 'You have to enter a username';
+    } else if (!email || !email.includes('@')) {
+        error = 'You have to enter a valid email address';
+    } else if (!password) {
+        error = 'You have to enter a password';
+    } else if (await selectOne('SELECT 1 FROM user WHERE username = ?',[username])) {
+        error = 'The username is already taken';
+    } else {
+        await insertOne(
+            'INSERT INTO user(username, email, pw_hash) VALUES(?, ?, ?)',
+            [username, email, password.lameHash()]);
+        return res.status(204).send();
 
+    }
+    return res.json({"status": 400, "error_msg": error}).status(400).send();
+});
 
 // Start application
 app.listen(5001);
