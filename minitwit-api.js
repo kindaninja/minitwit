@@ -42,6 +42,29 @@ app.post('/register', async function(req, res) {
     return res.json({"status": 400, "error_msg": error}).status(400).send();
 });
 
+// Public timeline page
+app.get('/msgs', async function(req, res) {
+    //TODO not from simulator function
+    //TODO number of messages
+    var noMsgs = req.query.no ? req.query.no : 100;
+    let messages = await selectAll(
+        `select message.*, user.* from message, user
+                where message.author_id = user.user_id
+                order by message.pub_date desc limit ?`,
+        [noMsgs]
+    );
+
+    var filteredMsgs = [];
+    messages.forEach(function(msg) {
+        let filteredMsg = {};
+        filteredMsg["content"] = msg["text"];
+        filteredMsg["pub_date"] = msg["pub_date"];
+        filteredMsg["user"] = msg["username"];
+        filteredMsgs.push(filteredMsg);
+    });
+    return res.json(JSON.stringify(filteredMsgs));
+});
+
 // Start application
 app.listen(5001);
 console.log('MiniTwit API is running on port 5001..');
