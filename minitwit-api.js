@@ -58,7 +58,7 @@ app.get('/msgs', async function(req, res) {
         filteredMsg["user"] = msg["username"];
         filteredMsgs.push(filteredMsg);
     });
-    return res.json(JSON.stringify(filteredMsgs));
+    return res.json(filteredMsgs);
 });
 
 app.get('/msgs/:username', async function(req, res) {
