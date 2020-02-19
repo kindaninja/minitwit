@@ -50,7 +50,12 @@ app.post('/register', async function(req, res) {
 // Public timeline page
 app.get('/msgs', async function(req, res) {
     updateLatest(req);
-    //TODO not_from_sim_function
+    let not_from_sim = notReqFromSimulator(req);
+    if (not_from_sim) {
+        let error = "You are not authorized to use this resource!";
+        return res.json({"status": 403, "error_msg": error}).status(403).send();
+    }
+
     let no_msgs = req.query.no ? req.query.no : 100;
     let messages = await selectAll(
         `select message.*, user.* from message, user
@@ -72,8 +77,13 @@ app.get('/msgs', async function(req, res) {
 
 app.get('/msgs/:username', async function(req, res) {
     updateLatest(req);
+
+    let not_from_sim = notReqFromSimulator(req);
+    if (not_from_sim) {
+        let error = "You are not authorized to use this resource!";
+        return res.json({"status": 403, "error_msg": error}).status(403).send();
+    }
     const { username } = req.params;
-    //TODO not_from_sim_response
     let no_msgs = req.query.no ? req.query.no : 100;
 
     let profile_user = await selectOne(
@@ -104,8 +114,13 @@ app.get('/msgs/:username', async function(req, res) {
 
 app.post('/msgs/:username', async function (req, res) {
     updateLatest(req);
+
+    let not_from_sim = notReqFromSimulator(req);
+    if (not_from_sim) {
+        let error = "You are not authorized to use this resource!";
+        return res.json({"status": 403, "error_msg": error}).status(403).send();
+    }
     const { username } = req.params;
-    //TODO not_from_sim_response
     let profile_user = await selectOne(
         'SELECT * FROM user WHERE username = ?',
         [username]);
@@ -125,8 +140,13 @@ app.post('/msgs/:username', async function (req, res) {
 
 app.get('/fllws/:username', async function (req, res) {
     updateLatest(req);
+
+    let not_from_sim = notReqFromSimulator(req);
+    if (not_from_sim) {
+        let error = "You are not authorized to use this resource!";
+        return res.json({"status": 403, "error_msg": error}).status(403).send();
+    }
     const { username } = req.params;
-    //TODO not_from_sim_response
 
     let profile_user = await selectOne(
         'SELECT * FROM user WHERE username = ?',
@@ -155,8 +175,13 @@ app.get('/fllws/:username', async function (req, res) {
 
 app.post('/fllws/:username', async function (req, res) {
     updateLatest(req);
+
+    let not_from_sim = notReqFromSimulator(req);
+    if (not_from_sim) {
+        let error = "You are not authorized to use this resource!";
+        return res.json({"status": 403, "error_msg": error}).status(403).send();
+    }
     const { username } = req.params;
-    //TODO not_from_sim_response
 
     let profile_user = await selectOne(
         'SELECT * FROM user WHERE username = ?',
@@ -260,6 +285,12 @@ function deleteRows(query, params) {
     });
 }
 
+// Checks if simulator
+function notReqFromSimulator(request) {
+    let from_sim = request.headers.authorization;
+    return from_sim !== "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh";
+}
+
 // Update latest
 function updateLatest(request) {
     let try_latest = request.query.latest ? request.query.latest : -1;
@@ -270,7 +301,7 @@ function updateLatest(request) {
 // TODO Use proper hashing library, bcrypt maybe?
 String.prototype.lameHash = function() {
     var hash = 0;
-    if (this.length == 0) {
+    if (this.length === 0) {
         return hash;
     }
     for (var i = 0; i < this.length; i++) {
