@@ -1,5 +1,23 @@
 version: '3'
 services:
+  webapp:
+    build: ./webapp
+    container_name: webapp
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - /tmp:/tmp
+    command:
+      "node minitwit.js"
+  api:
+    build: ./webapi
+    container_name: webapi
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - /tmp:/tmp
+    command:
+      "node minitwit-api.js"
   nginx:
     image: nginx:1.17
     container_name: reverse-proxy
