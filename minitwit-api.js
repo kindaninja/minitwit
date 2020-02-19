@@ -3,6 +3,8 @@ const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 
+let LATEST = 0;
+
 app.use(bodyParser.json());
 
 // SQLite3 https://github.com/mapbox/node-sqlite3
@@ -14,8 +16,14 @@ let db = new sqlite3.Database('/tmp/minitwit.db', (err) => {
     console.log('Connected to the minitwit.db SQlite database.');
 });
 
+// Get latest value
+app.get('/latest', function (req, res) {
+   return res.json({"latest": LATEST});
+});
+
 // Register handler
 app.post('/register', async function(req, res) {
+    updateLatest(req);
     const username = req.body.username;
     const email = req.body.email;
     const password = req.body.pwd;
@@ -41,6 +49,7 @@ app.post('/register', async function(req, res) {
 
 // Public timeline page
 app.get('/msgs', async function(req, res) {
+    updateLatest(req);
     //TODO not_from_sim_function
     let no_msgs = req.query.no ? req.query.no : 100;
     let messages = await selectAll(
@@ -62,6 +71,7 @@ app.get('/msgs', async function(req, res) {
 });
 
 app.get('/msgs/:username', async function(req, res) {
+    updateLatest(req);
     const { username } = req.params;
     //TODO not_from_sim_response
     let no_msgs = req.query.no ? req.query.no : 100;
@@ -93,6 +103,7 @@ app.get('/msgs/:username', async function(req, res) {
 });
 
 app.post('/msgs/:username', async function (req, res) {
+    updateLatest(req);
     const { username } = req.params;
     //TODO not_from_sim_response
     let profile_user = await selectOne(
@@ -113,6 +124,7 @@ app.post('/msgs/:username', async function (req, res) {
 });
 
 app.get('/fllws/:username', async function (req, res) {
+    updateLatest(req);
     const { username } = req.params;
     //TODO not_from_sim_response
 
@@ -142,6 +154,7 @@ app.get('/fllws/:username', async function (req, res) {
 });
 
 app.post('/fllws/:username', async function (req, res) {
+    updateLatest(req);
     const { username } = req.params;
     //TODO not_from_sim_response
 
@@ -245,6 +258,12 @@ function deleteRows(query, params) {
             resolve(this.changes);
         });
     });
+}
+
+// Update latest
+function updateLatest(request) {
+    let try_latest = request.query.latest ? request.query.latest : -1;
+    LATEST = try_latest !== -1 ? try_latest : LATEST;
 }
 
 // Lame password hash function
