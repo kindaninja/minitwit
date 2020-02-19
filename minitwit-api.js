@@ -1,10 +1,7 @@
 // Express web framework https://expressjs.com/
 const express = require('express');
 const app = express();
-// Sessions https://github.com/expressjs/session#readme
-var cookieParser = require('cookie-parser');
-var session = require('express-session');
-var bodyParser = require('body-parser');
+const bodyParser = require('body-parser');
 
 app.use(bodyParser.json());
 
@@ -44,17 +41,16 @@ app.post('/register', async function(req, res) {
 
 // Public timeline page
 app.get('/msgs', async function(req, res) {
-    //TODO not from simulator function
-    //TODO number of messages
-    var noMsgs = req.query.no ? req.query.no : 100;
+    //TODO not_from_sim_function
+    let no_msgs = req.query.no ? req.query.no : 100;
     let messages = await selectAll(
         `select message.*, user.* from message, user
                 where message.author_id = user.user_id
                 order by message.pub_date desc limit ?`,
-        [noMsgs]
+        [no_msgs]
     );
 
-    var filteredMsgs = [];
+    let filteredMsgs = [];
     messages.forEach(function(msg) {
         let filteredMsg = {};
         filteredMsg["content"] = msg["text"];
@@ -64,6 +60,134 @@ app.get('/msgs', async function(req, res) {
     });
     return res.json(JSON.stringify(filteredMsgs));
 });
+
+app.get('/msgs/:username', async function(req, res) {
+    const { username } = req.params;
+    //TODO not_from_sim_response
+    let no_msgs = req.query.no ? req.query.no : 100;
+
+    let profile_user = await selectOne(
+        'SELECT * FROM user WHERE username = ?',
+        [username]);
+
+    if(!profile_user) {
+        return res.status(404).send();
+    }
+
+    let messages = await selectAll(
+        `SELECT message.*, user.* FROM message, user WHERE
+                user.user_id = message.author_id AND user.user_id = ?
+                ORDER BY message.pub_date DESC LIMIT ?`,
+        [profile_user.user_id, no_msgs]);
+
+    let filteredMsgs = [];
+    messages.forEach(function(msg) {
+        let filteredMsg = {};
+        filteredMsg["content"] = msg["text"];
+        filteredMsg["pub_date"] = msg["pub_date"];
+        filteredMsg["user"] = msg["username"];
+        filteredMsgs.push(filteredMsg);
+    });
+
+    return res.json(filteredMsgs);
+});
+
+app.post('/msgs/:username', async function (req, res) {
+    const { username } = req.params;
+    //TODO not_from_sim_response
+    let profile_user = await selectOne(
+        'SELECT * FROM user WHERE username = ?',
+        [username]);
+
+    if(!profile_user) {
+        return res.status(404).send();
+    }
+
+    let content = req.body.content;
+
+    await insertOne(
+        'INSERT INTO message(author_id, text, pub_date) VALUES(?, ?, ?)',
+        [profile_user.user_id, content, Date.now()]);
+
+    return res.status(204).send();
+});
+
+app.get('/fllws/:username', async function (req, res) {
+    const { username } = req.params;
+    //TODO not_from_sim_response
+
+    let profile_user = await selectOne(
+        'SELECT * FROM user WHERE username = ?',
+        [username]);
+
+    if(!profile_user) {
+        return res.status(404).send();
+    }
+
+    let no_followers = req.query.no ? req.query.no : 100;
+
+    let followers = await selectAll(
+        `SELECT user.username FROM user
+                INNER JOIN follower ON follower.whom_id = user.user_id
+                WHERE follower.who_id = ?
+                LIMIT ?`,
+        [profile_user.user_id, no_followers]
+    );
+    let followers_names = [];
+    followers.forEach((follower) => {
+        followers_names.push(follower["username"])
+    });
+
+    return res.json({"follows": followers_names});
+});
+
+app.post('/fllws/:username', async function (req, res) {
+    const { username } = req.params;
+    //TODO not_from_sim_response
+
+    let profile_user = await selectOne(
+        'SELECT * FROM user WHERE username = ?',
+        [username]);
+
+    if(!profile_user) {
+        return res.status(404).send();
+    }
+
+    if (req.body.follow) {
+        let follow_username = req.body.follow;
+        let follows_user = await selectOne(
+            'SELECT * FROM user WHERE username = ?',
+            [follow_username]);
+
+        if (!follows_user) {
+            return res.status(404).send();
+        }
+
+        await insertOne(
+            'INSERT INTO follower (who_id, whom_id) VALUES (?, ?)',
+            [profile_user.user_id, follows_user.user_id]);
+
+        return res.status(204).send();
+    }
+
+    if (req.body.unfollow) {
+        let unfollow_username = req.body.unfollow;
+        let unfollows_user = await selectOne(
+            'SELECT * FROM user WHERE username = ?',
+            [unfollow_username]);
+
+        if (!unfollows_user){
+            return res.status(404).send();
+        }
+
+        await deleteRows(
+            'DELETE FROM follower WHERE who_id = ? AND whom_id = ?',
+            [profile_user.user_id, unfollows_user.user_id]);
+
+        return res.status(204).send();
+    }
+});
+
 
 // Start application
 app.listen(5001);
@@ -104,7 +228,21 @@ function insertOne(query, params) {
                 reject();
             }
             // Return the last inserted id
-            resolve(this.lastID)
+            resolve(this.lastID);
+        });
+    });
+}
+
+// Delete row(s)
+function deleteRows(query, params) {
+    return new Promise((resolve, reject) => {
+        db.run(query, params, function(err) {
+            if (err) {
+                console.error(err.message);
+                reject();
+            }
+            // Return the deleted
+            resolve(this.changes);
         });
     });
 }
