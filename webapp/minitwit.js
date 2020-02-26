@@ -232,6 +232,30 @@ app.get('/:username', async function(req, res) {
     });
 });
 
+app.get('/:username/follow', async function(req, res) {
+    const { username } = req.params;
+    if (!req.session.user_id)
+        res.status(401).send();
+    let whom = await selectOne('SELECT * FROM user WHERE username = ?',[username]);
+    if (!whom)
+        res.status(404).send();
+    await insertOne('INSERT INTO follower (who_id, whom_id) VALUES (?, ?)', [req.session.user_id, whom.user_id])
+
+    return res.redirect('/' + username);
+});
+
+app.get('/:username/unfollow', async function(req, res) {
+    const { username } = req.params;
+    if (!req.session.user_id)
+        res.status(401).send();
+    let whom = await selectOne('SELECT * FROM user WHERE username = ?',[username]);
+    if (!whom)
+        res.status(404).send();
+    await deleteRows('DELETE FROM follower WHERE who_id = ? AND whom_id = ?', [req.session.user_id, whom.user_id]);
+
+    return res.redirect('/' + username);
+});
+
 // Start application
 app.listen(8080);
 console.log('MiniTwit is running on port 8080..');
@@ -271,6 +295,20 @@ function insertOne(query, params) {
             }
             // Return the last inserted id
             resolve(this.lastID)
+        });
+    });
+}
+
+// Delete row(s)
+function deleteRows(query, params) {
+    return new Promise((resolve, reject) => {
+        db.run(query, params, function(err) {
+            if (err) {
+                console.error(err.message);
+                reject();
+            }
+            // Return the deleted
+            resolve(this.changes);
         });
     });
 }
