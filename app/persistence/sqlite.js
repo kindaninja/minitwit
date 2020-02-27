@@ -62,18 +62,18 @@ function deleteRows(query, params) {
 
 // Lame password hash function
 // TODO Use proper hashing library, bcrypt maybe?
-String.prototype.lameHash = function() {
-    var hash = 0;
-    if (this.length == 0) {
+function lameHash(string) {
+    let hash = 0;
+    if (string.length === 0) {
         return hash;
     }
-    for (var i = 0; i < this.length; i++) {
-        var char = this.charCodeAt(i);
+    for (let i = 0; i < string.length; i++) {
+        let char = String(string).charCodeAt(i);
         hash = ((hash<<5)-hash)+char;
         hash = hash & hash; // Convert to 32bit integer
     }
     return 'lame' + hash + 'hash';
-};
+}
 
 module.exports = {
     selectOne,

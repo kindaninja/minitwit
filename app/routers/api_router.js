@@ -29,7 +29,7 @@ router.post('/register', async function(req, res) {
     } else {
         await db.insertOne(
             'INSERT INTO user(username, email, pw_hash) VALUES(?, ?, ?)',
-            [username, email, password.lameHash()]);
+            [username, email, db.lameHash(password)]);
         return res.status(204).send();
 
     }

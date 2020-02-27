@@ -100,7 +100,7 @@ router.post('/register', async function(req, res) {
     } else {
         await db.insertOne(
             'INSERT INTO user(username, email, pw_hash) VALUES(?, ?, ?)',
-            [username, email, password.lameHash()]);
+            [username, email, db.lameHash(password)]);
         return res.render('pages/login', {
             username: username,
             flashes: ['You were successfully registered and can login now']
@@ -134,7 +134,7 @@ router.post('/login', async function(req, res) {
         const user = await db.selectOne('SELECT * FROM user WHERE username = ?',[username])
         if(!user) {
             error = 'Invalid username';
-        } else if (user.pw_hash !== password.lameHash()) {
+        } else if (user.pw_hash !== db.lameHash(password)) {
             error = 'Invalid password';
         } else {
             req.session.user_id = user.user_id;
