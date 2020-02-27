@@ -1,6 +1,6 @@
 version: '3'
 services:
-  webapp:
+  app:
     build: ./app
     container_name: app
     restart: unless-stopped
