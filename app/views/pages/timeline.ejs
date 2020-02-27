@@ -1,0 +1,58 @@
+<%- include('../partials/header.ejs'); %>
+<% if (locals.profile_user_id) { %>
+    <% if (locals.session_user_id) { %>
+        <% if (session_user_id == profile_user_id) { %>
+            <h2>My timeline</h2>
+        <% } else { %>
+            <h2><%= profile_username %>'s timeline</h2>
+        <% } %>
+    <% } %>
+<% } else { %>
+    <% if (locals.myFeed) { %>
+        <h2>My feed</h2>
+    <% } else { %>
+        <h2>Public timeline</h2>
+    <% } %>
+<% } %>
+
+<% if (locals.session_user_id) { %>
+    <% if (locals.profile_user_id) { %>
+        <div class=followstatus>
+        <% if (session_user_id == profile_user_id) { %>
+            This is you!
+        <% } else if (followed) { %>
+            You are currently following this user.
+            <a class=unfollow href="/<%= profile_username %>/unfollow">Unfollow user</a>
+        <% } else { %>
+            You are not yet following this user.
+            <a class=follow href="/<%= profile_username %>/follow">Follow user</a>
+        <% } %>
+    <% } else { %>
+        <div class=twitbox>
+            <h3>What's on your mind <%= session_username %>?</h3>
+            <form method="POST" action="/add_message">
+                <p><input type=text name=text size=60><!--
+                --><input type=submit value="Share">
+            </form>
+        </div>
+    <% } %>
+<% } %>
+<ul class=messages>
+    <% if (locals.messages) { %>
+        <% messages.forEach( msg => { %>
+        <li>
+            <img class="avatar" src="/avatar.png">
+            <p>
+                <strong><a href="/<%= msg.username %>"><%= msg.username %></a></strong>
+                <%= msg.text %>
+                <small>&mdash; <%= msg.pub_date %></small>
+            </p>
+        </li>
+        <% }) %>
+    <% } else { %>
+        <li><em>There's no message so far.</em></li>
+    <% } %>
+</ul>
+
+
+<%- include('../partials/footer.ejs'); %>
