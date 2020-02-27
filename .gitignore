@@ -135,3 +135,4 @@ app/node_modules/
 package-lock.json
 
 id_rsa
+.DS_Store
