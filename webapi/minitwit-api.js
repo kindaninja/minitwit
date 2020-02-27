@@ -294,7 +294,7 @@ function notReqFromSimulator(request) {
 // Update latest
 function updateLatest(request) {
     let try_latest = request.query.latest ? request.query.latest : -1;
-    LATEST = try_latest !== -1 ? try_latest : LATEST;
+    LATEST = try_latest !== -1 ? parseInt(try_latest) : LATEST;
 }
 
 // Lame password hash function
