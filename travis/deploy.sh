@@ -9,5 +9,6 @@ git push deploy master
 
 ssh deploy@$IP -p $PORT <<EOF
   cd $DEPLOY_DIR
-  echo deploy | sudo -S docker-compose up -d --build
+  echo deploy | sudo -S docker-compose build --force-rm --no-cache
+  echo deploy | sudo -S docker-compose up -d
 EOF
