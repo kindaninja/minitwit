@@ -14,9 +14,9 @@ const SECRET = 'shhhhhhhhhh';
 const web = express();
 // EJS template engine https://ejs.co/
 web.set('view engine', 'ejs');
-web.set('views', '../views');
+web.set('views', 'views');
 // Static files
-web.use(express.static('../static'));
+web.use(express.static('static'));
 // Form data
 web.use(express.urlencoded())
 // Sessions

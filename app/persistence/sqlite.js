@@ -1,6 +1,7 @@
 // SQLite3 https://github.com/mapbox/node-sqlite3
 const sqlite3 = require('sqlite3').verbose();
-let db = new sqlite3.Database('/minitwit.db', (err) => {
+
+let db = new sqlite3.Database('/tmp/minitwit.db', (err) => {
     if (err) {
         return console.error(err.message);
     }
