@@ -131,6 +131,7 @@ dmypy.json
 .idea/
 webapp/node_modules/
 webapi/node_modules/
+app/node_modules/
 package-lock.json
 
 id_rsa

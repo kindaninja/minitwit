@@ -1,5 +1,7 @@
 const express = require('express');
+const db = require('../persistence/sqlite');
 const router = express.Router();
+
 
 let LATEST = 0;
 
@@ -22,10 +24,10 @@ router.post('/register', async function(req, res) {
         error = 'You have to enter a valid email address';
     } else if (!password) {
         error = 'You have to enter a password';
-    } else if (await selectOne('SELECT 1 FROM user WHERE username = ?',[username])) {
+    } else if (await db.selectOne('SELECT 1 FROM user WHERE username = ?',[username])) {
         error = 'The username is already taken';
     } else {
-        await insertOne(
+        await db.insertOne(
             'INSERT INTO user(username, email, pw_hash) VALUES(?, ?, ?)',
             [username, email, password.lameHash()]);
         return res.status(204).send();
@@ -44,7 +46,7 @@ router.get('/msgs', async function(req, res) {
     }
 
     let no_msgs = req.query.no ? req.query.no : 100;
-    let messages = await selectAll(
+    let messages = await db.selectAll(
         `select message.*, user.* from message, user
                 where message.author_id = user.user_id
                 order by message.pub_date desc limit ?`,
@@ -73,7 +75,7 @@ router.get('/msgs/:username', async function(req, res) {
     const { username } = req.params;
     let no_msgs = req.query.no ? req.query.no : 100;
 
-    let profile_user = await selectOne(
+    let profile_user = await db.selectOne(
         'SELECT * FROM user WHERE username = ?',
         [username]);
 
@@ -81,7 +83,7 @@ router.get('/msgs/:username', async function(req, res) {
         return res.status(404).send();
     }
 
-    let messages = await selectAll(
+    let messages = await db.selectAll(
         `SELECT message.*, user.* FROM message, user WHERE
                 user.user_id = message.author_id AND user.user_id = ?
                 ORDER BY message.pub_date DESC LIMIT ?`,
@@ -108,7 +110,7 @@ router.post('/msgs/:username', async function (req, res) {
         return res.json({"status": 403, "error_msg": error}).status(403).send();
     }
     const { username } = req.params;
-    let profile_user = await selectOne(
+    let profile_user = await db.selectOne(
         'SELECT * FROM user WHERE username = ?',
         [username]);
 
@@ -118,7 +120,7 @@ router.post('/msgs/:username', async function (req, res) {
 
     let content = req.body.content;
 
-    await insertOne(
+    await db.insertOne(
         'INSERT INTO message(author_id, text, pub_date) VALUES(?, ?, ?)',
         [profile_user.user_id, content, Date.now()]);
 
@@ -135,7 +137,7 @@ router.get('/fllws/:username', async function (req, res) {
     }
     const { username } = req.params;
 
-    let profile_user = await selectOne(
+    let profile_user = await db.selectOne(
         'SELECT * FROM user WHERE username = ?',
         [username]);
 
@@ -145,7 +147,7 @@ router.get('/fllws/:username', async function (req, res) {
 
     let no_followers = req.query.no ? req.query.no : 100;
 
-    let followers = await selectAll(
+    let followers = await db.selectAll(
         `SELECT user.username FROM user
                 INNER JOIN follower ON follower.whom_id = user.user_id
                 WHERE follower.who_id = ?
@@ -170,7 +172,7 @@ router.post('/fllws/:username', async function (req, res) {
     }
     const { username } = req.params;
 
-    let profile_user = await selectOne(
+    let profile_user = await db.selectOne(
         'SELECT * FROM user WHERE username = ?',
         [username]);
 
@@ -180,7 +182,7 @@ router.post('/fllws/:username', async function (req, res) {
 
     if (req.body.follow) {
         let follow_username = req.body.follow;
-        let follows_user = await selectOne(
+        let follows_user = await db.selectOne(
             'SELECT * FROM user WHERE username = ?',
             [follow_username]);
 
@@ -188,7 +190,7 @@ router.post('/fllws/:username', async function (req, res) {
             return res.status(404).send();
         }
 
-        await insertOne(
+        await db.insertOne(
             'INSERT INTO follower (who_id, whom_id) VALUES (?, ?)',
             [profile_user.user_id, follows_user.user_id]);
 
@@ -197,7 +199,7 @@ router.post('/fllws/:username', async function (req, res) {
 
     if (req.body.unfollow) {
         let unfollow_username = req.body.unfollow;
-        let unfollows_user = await selectOne(
+        let unfollows_user = await db.selectOne(
             'SELECT * FROM user WHERE username = ?',
             [unfollow_username]);
 
@@ -205,7 +207,7 @@ router.post('/fllws/:username', async function (req, res) {
             return res.status(404).send();
         }
 
-        await deleteRows(
+        await db.deleteRows(
             'DELETE FROM follower WHERE who_id = ? AND whom_id = ?',
             [profile_user.user_id, unfollows_user.user_id]);
 
