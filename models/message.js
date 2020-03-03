@@ -7,8 +7,11 @@ module.exports = (sequelize, DataTypes) => {
     pub_date: DataTypes.INTEGER,
     flagged: DataTypes.INTEGER
   }, {});
-  Message.associate = function(models) {
-    // associations can be defined here
+  Message.associate = function (models) {
+    Message.belongsTo(models.User, {
+      foreignKey: 'user_id',
+      as: 'auhtor',
+    })
   };
   return Message;
 };

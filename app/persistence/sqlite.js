@@ -1,7 +1,11 @@
 // SQLite3 https://github.com/mapbox/node-sqlite3
+// const path = require('path')
+// const dbPath = path.resolve(__dirname, 'minitwit.db')
 const sqlite3 = require('sqlite3').verbose();
+// const models = require('../../models');
 
 
+//let db = new sqlite3.Database('./minitwit.db', (err) => {
 let db = new sqlite3.Database('/tmp/minitwit.db', (err) => {
     if (err) {
         return console.error(err.message);
@@ -37,7 +41,7 @@ function selectAll(query, params) {
 // Insert 1 row
 function insertOne(query, params) {
     return new Promise((resolve, reject) => {
-        db.run(query, params, function(err) {
+        db.run(query, params, function (err) {
             if (err) {
                 console.error(err.message);
                 reject();
@@ -51,7 +55,7 @@ function insertOne(query, params) {
 // Delete row(s)
 function deleteRows(query, params) {
     return new Promise((resolve, reject) => {
-        db.run(query, params, function(err) {
+        db.run(query, params, function (err) {
             if (err) {
                 console.error(err.message);
                 reject();
@@ -71,16 +75,47 @@ function lameHash(string) {
     }
     for (let i = 0; i < string.length; i++) {
         let char = String(string).charCodeAt(i);
-        hash = ((hash<<5)-hash)+char;
+        hash = ((hash << 5) - hash) + char;
         hash = hash & hash; // Convert to 32bit integer
     }
     return 'lame' + hash + 'hash';
 }
+
+// function getUser(username) {
+//     return new Promise((resolve, reject) => {
+//         var user = models.User.findOne({
+//             username: username,
+//         }).then(user => user);
+//         if(user == null) {
+//             console.log("Resolving user");
+//             reject();
+//         } else {
+//             console.log("Resolving user");
+//             resolve(user);
+//         }
+//     });
+// }
+
+// function createUser(username, email, password) {
+//     return new Promise((resolve, reject) => {
+//         models.User.create({
+//             username: username,
+//             email: email,
+//             pw_hash: password,
+//         })
+//         .then(user => resolve(user.username))
+//         .catch(function (err) {
+//             reject();
+//         });
+//     });
+// }
 
 module.exports = {
     selectOne,
     selectAll,
     insertOne,
     deleteRows,
-    lameHash
+    lameHash,
+    // getUser,
+    // createUser,
 };
