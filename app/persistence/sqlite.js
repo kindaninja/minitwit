@@ -81,20 +81,24 @@ function lameHash(string) {
     return 'lame' + hash + 'hash';
 }
 
-// function getUser(username) {
-//     return new Promise((resolve, reject) => {
-//         var user = models.User.findOne({
-//             username: username,
-//         }).then(user => user);
-//         if(user == null) {
-//             console.log("Resolving user");
-//             reject();
-//         } else {
-//             console.log("Resolving user");
-//             resolve(user);
-//         }
-//     });
-// }
+async function getUser(username) {
+    return new Promise((resolve, reject) => {
+        var user = models.User.findOne({
+            where: {
+                username: username
+              },
+        }).then(user => user);
+        if(user == null) {
+            console.log("No user found");
+            reject();
+        } else {
+            console.log("User" + user);
+            resolve(user);
+        }
+    }).catch((err) => {
+        console.log(err);
+    });
+}
 
 async function createUser(username, email, password) {
     return new Promise((resolve, reject) => {
@@ -117,6 +121,6 @@ module.exports = {
     insertOne,
     deleteRows,
     lameHash,
-    // getUser,
+    getUser,
     createUser,
 };
