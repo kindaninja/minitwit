@@ -26,6 +26,14 @@ module.exports = {
       flagged: {
         type: Sequelize.INTEGER
       },
+      createdAt: {
+        
+        type: Sequelize.DATE,
+    },
+    updatedAt: {
+        
+        type: Sequelize.DATE,
+    },
     });
   },
   down: (queryInterface, Sequelize) => {

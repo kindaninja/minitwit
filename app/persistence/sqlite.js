@@ -2,11 +2,11 @@
 // const path = require('path')
 // const dbPath = path.resolve(__dirname, 'minitwit.db')
 const sqlite3 = require('sqlite3').verbose();
-// const models = require('../../models');
+const models = require('../../models');
 
 
-//let db = new sqlite3.Database('./minitwit.db', (err) => {
-let db = new sqlite3.Database('/tmp/minitwit.db', (err) => {
+let db = new sqlite3.Database('/Users/rdmo/Documents/ITU/MSc\ Computer\ Science/2.\ Semester/DevOps/minitwit/app/persistence/minitwit.db', (err) => {
+// let db = new sqlite3.Database('/tmp/minitwit.db', (err) => {
     if (err) {
         return console.error(err.message);
     }
@@ -96,19 +96,20 @@ function lameHash(string) {
 //     });
 // }
 
-// function createUser(username, email, password) {
-//     return new Promise((resolve, reject) => {
-//         models.User.create({
-//             username: username,
-//             email: email,
-//             pw_hash: password,
-//         })
-//         .then(user => resolve(user.username))
-//         .catch(function (err) {
-//             reject();
-//         });
-//     });
-// }
+async function createUser(username, email, password) {
+    return new Promise((resolve, reject) => {
+        models.User.create({
+            username: username,
+            email: email,
+            pw_hash: password,
+        })
+        .then(user => resolve(user.username))
+        .catch(function (err) {
+            console.log(err);
+            reject();
+        });
+    }).catch((err) => {console.log(err)});
+}
 
 module.exports = {
     selectOne,
@@ -117,5 +118,5 @@ module.exports = {
     deleteRows,
     lameHash,
     // getUser,
-    // createUser,
+    createUser,
 };

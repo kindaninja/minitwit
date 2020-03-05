@@ -98,9 +98,10 @@ router.post('/register', async function(req, res) {
     } else if (await db.selectOne('SELECT 1 FROM user WHERE username = ?',[username])) {
         error = 'The username is already taken';
     } else {
-        await db.insertOne(
-            'INSERT INTO user(username, email, pw_hash) VALUES(?, ?, ?)',
-            [username, email, db.lameHash(password)]);
+        await db.createUser(username, email, db.lameHash(password));
+        // await db.insertOne(
+        //     'INSERT INTO user(username, email, pw_hash) VALUES(?, ?, ?)',
+        //     [username, email, db.lameHash(password)]);
         return res.render('pages/login', {
             username: username,
             flashes: ['You were successfully registered and can login now']

@@ -5,7 +5,9 @@ module.exports = (sequelize, DataTypes) => {
     author_id: DataTypes.INTEGER,
     text: DataTypes.STRING,
     pub_date: DataTypes.INTEGER,
-    flagged: DataTypes.INTEGER
+    flagged: DataTypes.INTEGER,
+    createdAt: DataTypes.DATE,
+    updatedAt: DataTypes.DATE,
   }, {});
   Message.associate = function (models) {
     Message.belongsTo(models.User, {

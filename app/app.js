@@ -3,10 +3,11 @@ const express = require('express');
 // Sessions https://github.com/expressjs/session#readme
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
-
 const webRouter = require('./routers/web_router');
 const apiRouter = require('./routers/api_router');
 
+const path = '/Users/rdmo/Documents/ITU/MSc\ Computer\ Science/2.\ Semester/DevOps/minitwit/app/'
+//setting current dir
 const SECRET = 'shhhhhhhhhh';
 
 // === Web app ===
@@ -14,15 +15,15 @@ const SECRET = 'shhhhhhhhhh';
 const web = express();
 // EJS template engine https://ejs.co/
 web.set('view engine', 'ejs');
-web.set('views', 'views');
+web.set('views', path + 'views');
+
 // Static files
-web.use(express.static('static'));
+web.use(express.static(path + 'static'));
 // Form data
 web.use(express.urlencoded())
 // Sessions
 web.use(cookieParser());
 web.use(session({secret: SECRET}));
-
 web.use('/', webRouter);
 web.listen(8080, () => console.log('Minitwit web app listening on port 8080.'));
 

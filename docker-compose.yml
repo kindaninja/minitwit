@@ -16,3 +16,14 @@ services:
     network_mode: host
     volumes:
       - ./nginx:/etc/nginx/
+
+  database:
+    image: "postgres"
+    env_file: 
+      - db.env
+    volumes:
+      - database-data:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+volumes:
+  database-data: 

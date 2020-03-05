@@ -14,6 +14,12 @@ module.exports = {
       whom_id: {
         type: Sequelize.INTEGER
       },
+      createdAt: {
+        type: Sequelize.DATE,
+    },
+    updatedAt: {
+        type: Sequelize.DATE,
+    },
     });
   },
   down: (queryInterface, Sequelize) => {
