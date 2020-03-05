@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../persistence/sqlite');
+const helpers = require('../utils/helpers');
 const router = express.Router();
 
 const PER_PAGE = 20;
@@ -23,7 +24,8 @@ router.get('/', async function(req, res) {
         session_username: req.session.username,
         session_user_id: req.session.user_id,
         messages: messages,
-        myFeed: true
+        myFeed: true,
+        helpers: helpers
     });
 });
 
@@ -38,7 +40,8 @@ router.get('/public', async function(req, res) {
     res.render('pages/timeline', {
         session_username: req.session.username,
         session_user_id: req.session.user_id,
-        messages: messages
+        messages: messages,
+        helpers: helpers
     });
 });
 
@@ -67,7 +70,8 @@ router.post('/add_message', async function(req, res) {
             session_user_id: req.session.user_id,
             session_username: req.session.username,
             messages: messages,
-            myFeed: true
+            myFeed: true,
+            helpers: helpers
         });
     }
 });
@@ -153,7 +157,8 @@ router.post('/login', async function(req, res) {
                 flashes: ['You were logged in'],
                 session_user_id: req.session.user_id,
                 session_username: req.session.username,
-                messages
+                messages,
+                helpers: helpers
             });
         }
     }
@@ -202,7 +207,8 @@ router.get('/:username', async function(req, res) {
         profile_username: profile_user.username,
         profile_user_id: profile_user.user_id,
         followed: !!followed,
-        messages: messages
+        messages: messages,
+        helpers: helpers
     });
 });
 
