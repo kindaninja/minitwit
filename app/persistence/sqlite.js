@@ -5,7 +5,7 @@ const sqlite3 = require('sqlite3').verbose();
 const models = require('../../models');
 
 
-let db = new sqlite3.Database('/Users/rdmo/Documents/ITU/MSc\ Computer\ Science/2.\ Semester/DevOps/minitwit/app/persistence/minitwit.db', (err) => {
+let db = new sqlite3.Database('/Users/admin/Code/minitwit/app/persistence/minitwit.db', (err) => {
 // let db = new sqlite3.Database('/tmp/minitwit.db', (err) => {
     if (err) {
         return console.error(err.message);
@@ -104,6 +104,20 @@ async function createUser(username, email, password) {
     return new Promise((resolve, reject) => {
         models.User.create({
             username: username,
+            email: email,
+            pw_hash: password,
+        })
+        .then(user => resolve(user.username))
+        .catch(function (err) {
+            console.log(err);
+            reject();
+        });
+    }).catch((err) => {console.log(err)});
+}
+
+async function getUser(email, password) {
+    return new Promise((resolve, reject) => {
+        models.User.get({
             email: email,
             pw_hash: password,
         })

@@ -6,8 +6,9 @@ const session = require('express-session');
 const webRouter = require('./routers/web_router');
 const apiRouter = require('./routers/api_router');
 
-const path = '/Users/rdmo/Documents/ITU/MSc\ Computer\ Science/2.\ Semester/DevOps/minitwit/app/'
 //setting current dir
+const path = '/Users/admin/Code/minitwit/app/'
+
 const SECRET = 'shhhhhhhhhh';
 
 // === Web app ===
@@ -15,7 +16,7 @@ const SECRET = 'shhhhhhhhhh';
 const web = express();
 // EJS template engine https://ejs.co/
 web.set('view engine', 'ejs');
-web.set('views', path + 'views');
+web.set('views', path + 'views'); //custom path
 
 // Static files
 web.use(express.static(path + 'static'));
