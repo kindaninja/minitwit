@@ -16,10 +16,10 @@ module.exports = {
       },
       createdAt: {
         type: Sequelize.DATE,
-    },
-    updatedAt: {
+      },
+      updatedAt: {
         type: Sequelize.DATE,
-    },
+      },
     });
   },
   down: (queryInterface, Sequelize) => {

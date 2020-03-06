@@ -18,8 +18,8 @@ module.exports = (sequelize, DataTypes) => {
           onDelete: 'CASCASE',
       });
       User.hasMany(models.Follower, {
-        foreignKey: 'who_id',
-        onDelete: 'CASCASE',
+          foreignKey: 'who_id',
+          onDelete: 'CASCASE',
     });
     
     // associations can be defined here
