@@ -1,3 +1,4 @@
+
 const express = require('express');
 const db = require('../persistence/sqlite');
 const router = express.Router();
@@ -29,16 +30,17 @@ router.get('/', async function(req, res) {
 
 // Public timeline page
 router.get('/public', async function(req, res) {
-    let messages = await db.selectAll(
-        `select message.*, user.* from message, user
-                where message.author_id = user.user_id
-                order by message.pub_date desc limit ?`,
-        [PER_PAGE]
-    );
+    // let messages = await db.selectAll(
+    //     `select message.*, user.* from message, user
+    //             where message.author_id = user.user_id
+    //             order by message.pub_date desc limit ?`,
+    //     [PER_PAGE]
+    // );
+    let messages = await db.getAllPublic(PER_PAGE);
     res.render('pages/timeline', {
         session_username: req.session.username,
         session_user_id: req.session.user_id,
-        messages: messages
+        messages: messages,
     });
 });
 
@@ -49,24 +51,27 @@ router.post('/add_message', async function(req, res) {
     if(!user_id) {
         return res.status(401).send();
     } else {
-        await db.insertOne(
-            'INSERT INTO message(author_id, text, pub_date) VALUES(?, ?, ?)',
-            [user_id, text, Date.now()])
-        let messages = await db.selectAll(
-            `SELECT message.*, user.* FROM message, user
-                WHERE message.author_id = user.user_id AND (
-                    user.user_id = ? OR
-                    user.user_id IN (
-                        SELECT whom_id FROM follower
-                        WHERE who_id = ?))
-                ORDER BY message.pub_date DESC LIMIT ?`,
-            [req.session.user_id, req.session.user_id, PER_PAGE]
-        );
+        // await db.insertOne(
+        //     'INSERT INTO message(author_id, text, pub_date) VALUES(?, ?, ?)',
+        //     [user_id, text, Date.now()])
+        await db.addMessage(user_id, text, Date.now())
+        // let messages = await db.selectAll(
+        //     `SELECT message.*, user.* FROM message, user
+        //         WHERE message.author_id = user.user_id AND (
+        //             user.user_id = ? OR
+        //             user.user_id IN (
+        //                 SELECT whom_id FROM follower
+        //                 WHERE who_id = ?))
+        //         ORDER BY message.pub_date DESC LIMIT ?`,
+        //     [req.session.user_id, req.session.user_id, PER_PAGE]
+        // );
+        let messages = db.getAllPublic(PER_PAGE);
+        // console.log("!!!!!!!Messages!!!!!!!!" + messages);
         return res.render('pages/timeline', {
             flashes: ['Your message was recorded'],
             session_user_id: req.session.user_id,
             session_username: req.session.username,
-            messages: messages,
+            messages: messages["User"],
             myFeed: true
         });
     }
@@ -95,13 +100,14 @@ router.post('/register', async function(req, res) {
         error = 'You have to enter a password';
     } else if (password !== password2) {
         error = 'The two passwords do not match';
-    } else if (await db.selectOne('SELECT 1 FROM user WHERE username = ?',[username])) {
+    // } else if (await db.selectOne('SELECT 1 FROM user WHERE username = ?',[username])) {
+    } else if (await db.getUser(username)) {
         error = 'The username is already taken';
     } else {
         await db.createUser(username, email, db.lameHash(password));
-        // await db.insertOne(
-        //     'INSERT INTO user(username, email, pw_hash) VALUES(?, ?, ?)',
-        //     [username, email, db.lameHash(password)]);
+        await db.insertOne(
+            'INSERT INTO user(username, email, pw_hash) VALUES(?, ?, ?)',
+            [username, email, db.lameHash(password)]);
         return res.render('pages/login', {
             username: username,
             flashes: ['You were successfully registered and can login now']
@@ -230,7 +236,6 @@ router.get('/:username/unfollow', async function(req, res) {
 
     return res.redirect('/' + username);
 });
-
 
 
 

@@ -27,13 +27,13 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       createdAt: {
-        
+
         type: Sequelize.DATE,
-    },
-    updatedAt: {
-        
+      },
+      updatedAt: {
+
         type: Sequelize.DATE,
-    },
+      },
     });
   },
   down: (queryInterface, Sequelize) => {
