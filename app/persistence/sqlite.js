@@ -123,13 +123,13 @@ async function getAllMessagesForUser(userId, perPage) {
                     // }
                     // }
                 },
-    
-    
+
+
                 order: [['pub_date', 'DESC']],
                 limit: perPage,
             }).then((messages) => {
                 // console.log("MESSAGESSSSSSSS");
-    
+
                 // console.log(messages);
                 var refinedMessages = [];
                 messages.forEach((msg) => {
@@ -151,8 +151,8 @@ async function getAllMessagesForUser(userId, perPage) {
                 resolve(refinedMessages);
             });
         });
-        
-        
+
+
     }).catch((err) => {
         console.log(err);
     });
@@ -179,23 +179,41 @@ async function getUser(username) {
 
 async function getMessagesForUserProfile(userId, perPage) {
     return new Promise((resolve, reject) => {
-        var messages = models.Messages.findAll({
+        models.Message.findAll({
             include: [
                 {
                     model: models.User,
                 },
             ],
             where: {
-                user_id: userId,
+                author_id: userId,
             },
-        }).then(msgs => msgs);
-        if (user == null) {
-            reject();
-        } else {
-            resolve(messages);
-        }
-    }).catch((err) => {
-        console.log(err);
+            limit: perPage,
+        }).then(messages => {
+            // console.log("MESSAGESSSSSSSS");
+
+            // console.log(messages);
+            var refinedMessages = [];
+            messages.forEach((msg) => {
+                const msgData = msg.dataValues;
+                // console.log(msgData);
+                const userData = msgData.User.dataValues;
+                // console.log(userData);
+                refinedMessages.push(
+                    {
+                        message_id: msgData.message_id,
+                        author_id: msgData.author_id,
+                        text: msgData.text,
+                        pub_date: msgData.pub_date,
+                        username: userData.username,
+                    }
+                );
+            });
+            // console.log(refinedMessages);
+            resolve(refinedMessages);
+        }).catch((err) => {
+            console.log(err);
+        });
     });
 }
 
@@ -271,6 +289,27 @@ async function addMessage(userId, text, date) {
     }).catch((err) => { console.log(err) });
 }
 
+async function follow(who, whom) {
+    return new Promise((resolve, reject) => {
+        models.Follower.create({
+            who_id: who,
+            whom_id: whom,
+        }).then(follower => resolve(follower)).catch((err) => reject());
+    })
+}
+
+async function unfollow(who, whom) {
+    return new Promise((resolve, reject) => {
+        getFollower(who, whom)
+            .then((follower) => {
+                follower.destroy()
+                    .then((response) => resolve(response))
+                    .catch((err) => reject())
+            })
+            .catch((err) => console.log(err));
+    })
+}
+
 module.exports = {
     selectOne,
     selectAll,
@@ -284,4 +323,6 @@ module.exports = {
     addMessage,
     getFollower,
     getMessagesForUserProfile,
+    follow,
+    unfollow,
 };

@@ -70,7 +70,7 @@ router.post('/add_message', async function(req, res) {
         //     [req.session.user_id, req.session.user_id, PER_PAGE]
         // );
         let messages = await db.getAllMessagesForUser(req.session.user_id, PER_PAGE);
-        console.log(messages);
+        // console.log(messages);
         return res.render('pages/timeline', {
             flashes: ['Your message was recorded'],
             session_user_id: req.session.user_id,
@@ -204,7 +204,8 @@ router.get('/:username', async function(req, res) {
         // followed = await db.selectOne(
         //     'SELECT 1 FROM follower WHERE follower.who_id = ? and follower.whom_id = ?',
         //     [req.session.user_id, profile_user.user_id]);
-        followed = await db.getFollower(req.session.user_id, profile_user.user_id);
+        var follower = await db.getFollower(req.session.user_id, profile_user.user_id);
+        followed = follower? true : false;
     }
 
     // let messages = await db.selectAll(
@@ -214,6 +215,7 @@ router.get('/:username', async function(req, res) {
     //     [profile_user.user_id, PER_PAGE]
     // );
     let messages = await db.getMessagesForUserProfile(profile_user.user_id, PER_PAGE);
+    console.log(followed);
 
     res.render('pages/timeline', {
         session_username: req.session.username,
@@ -229,10 +231,14 @@ router.get('/:username/follow', async function(req, res) {
     const { username } = req.params;
     if (!req.session.user_id)
         res.status(401).send();
-    let whom = await db.selectOne('SELECT * FROM user WHERE username = ?',[username]);
+    // let whom = await db.selectOne('SELECT * FROM user WHERE username = ?',[username]);
+    let whom = await db.getUser(username);
+    console.log("WHOM????");
+    console.log(whom);
     if (!whom)
         res.status(404).send();
-    await db.insertOne('INSERT INTO follower (who_id, whom_id) VALUES (?, ?)', [req.session.user_id, whom.user_id])
+    // await db.insertOne('INSERT INTO follower (who_id, whom_id) VALUES (?, ?)', [req.session.user_id, whom.user_id])
+    await db.follow(req.session.user_id, whom.user_id);
 
     return res.redirect('/' + username);
 });
@@ -241,15 +247,14 @@ router.get('/:username/unfollow', async function(req, res) {
     const { username } = req.params;
     if (!req.session.user_id)
         res.status(401).send();
-    let whom = await db.selectOne('SELECT * FROM user WHERE username = ?',[username]);
+    // let whom = await db.selectOne('SELECT * FROM user WHERE username = ?',[username]);
+    let whom = await db.getUser(username);
     if (!whom)
         res.status(404).send();
-    await db.deleteRows('DELETE FROM follower WHERE who_id = ? AND whom_id = ?', [req.session.user_id, whom.user_id]);
+    // await db.deleteRows('DELETE FROM follower WHERE who_id = ? AND whom_id = ?', [req.session.user_id, whom.user_id]);
+    await db.unfollow(req.session.user_id, whom.user_id);
 
     return res.redirect('/' + username);
 });
-
-
-
 
 module.exports = router;
