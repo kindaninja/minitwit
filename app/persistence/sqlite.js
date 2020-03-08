@@ -5,7 +5,7 @@ const sqlite3 = require('sqlite3').verbose();
 const models = require('../../models');
 const sequelize = require('sequelize');
 let db = new sqlite3.Database('/Users/rdmo/Documents/ITU/MSc\ Computer\ Science/2.\ Semester/DevOps/minitwit/app/persistence/minitwit.db', (err) => {
-// let db = new sqlite3.Database('/tmp/minitwit.db', (err) => {
+    // let db = new sqlite3.Database('/tmp/minitwit.db', (err) => {
     if (err) {
         return console.error(err.message);
     }
@@ -89,34 +89,70 @@ function lameHash(string) {
 //                 ORDER BY message.pub_date DESC LIMIT ?`,
 //         [req.session.user_id, req.session.user_id, PER_PAGE]
 
+
+//  let messages = await db.selectAll(
+//     `select message.*, user.* from message, user
+//                 where message.author_id = user.user_id
+//                 order by message.pub_date desc limit ?`,
+//     [PER_PAGE]
+// );
 async function getAllMessagesForUser(userId, perPage) {
     return new Promise((resolve, reject) => {
-        var followed = models.Follower.findAll({
+        models.Follower.findAll({
             attributes: [
-              'whom_id'
+                'whom_id'
             ],
             where: {
                 who_id: userId,
             }
-        });
-        models.Message.findAll({
-            include: [
-                {model: models.User},
-            ],
-            where: {
-                author_id: models.User.user_id,
-                $and: {
-                    user_id: userId,
-                    $or: {
-                        userId: {
-                            $in: followed,
+        }).then((followed) => {
+            models.Message.findAll({
+                include: [
+                    {
+                        model: models.User,
+                    },
+                ],
+                where: {
+                    author_id: userId,
+                    // $and: {
+                    //     user_id: userId,
+                    // $or: {
+                    //     userId: {
+                    //         $in: followed,
+                    //     }
+                    // }
+                    // }
+                },
+    
+    
+                order: [['pub_date', 'DESC']],
+                limit: perPage,
+            }).then((messages) => {
+                // console.log("MESSAGESSSSSSSS");
+    
+                // console.log(messages);
+                var refinedMessages = [];
+                messages.forEach((msg) => {
+                    const msgData = msg.dataValues;
+                    // console.log(msgData);
+                    const userData = msgData.User.dataValues;
+                    // console.log(userData);
+                    refinedMessages.push(
+                        {
+                            message_id: msgData.message_id,
+                            author_id: msgData.author_id,
+                            text: msgData.text,
+                            pub_date: msgData.pub_date,
+                            username: userData.username,
                         }
-                    }
-                }
-            },
-            order: ['DESC'],
-            limit: perPage,
-        }).then(messages => resolve(messages)).catch(() => reject());
+                    );
+                });
+                // console.log(refinedMessages);
+                resolve(refinedMessages);
+            });
+        });
+        
+        
     }).catch((err) => {
         console.log(err);
     });
@@ -127,14 +163,36 @@ async function getUser(username) {
         var user = models.User.findOne({
             where: {
                 username: username
-              },
+            },
         }).then(user => user);
-        if(user == null) {
+        if (user == null) {
             console.log("No user found");
             reject();
         } else {
             console.log("User" + user);
             resolve(user);
+        }
+    }).catch((err) => {
+        console.log(err);
+    });
+}
+
+async function getMessagesForUserProfile(userId, perPage) {
+    return new Promise((resolve, reject) => {
+        var messages = models.Messages.findAll({
+            include: [
+                {
+                    model: models.User,
+                },
+            ],
+            where: {
+                user_id: userId,
+            },
+        }).then(msgs => msgs);
+        if (user == null) {
+            reject();
+        } else {
+            resolve(messages);
         }
     }).catch((err) => {
         console.log(err);
@@ -148,38 +206,46 @@ async function createUser(username, email, password) {
             email: email,
             pw_hash: password,
         })
-        .then(user => resolve(user.username))
-        .catch(function (err) {
-            console.log(err);
-            reject();
-        });
-    }).catch((err) => {console.log(err)});
+            .then(user => resolve(user.username))
+            .catch(function (err) {
+                console.log(err);
+                reject();
+            });
+    }).catch((err) => { console.log(err) });
 }
 
-// let messages = await db.selectAll(
-//     `select message.*, user.* from message, user
-//                 where message.author_id = user.user_id
-//                 order by message.pub_date desc limit ?`,
-//     [PER_PAGE]
-// );
+async function getFollower(sessionUserId, profileUserId) {
+    return new Promise((resolve, reject) => {
+        models.Follower.findOne({
+            where: {
+                who_id: sessionUserId,
+                $and: {
+                    whom_id: profileUserId,
+                }
+            }
+        })
+            .then(follower => resolve(follower))
+            .catch(function (err) {
+                console.log(err);
+                reject();
+            });
+    }).catch((err) => { console.log(err) });
+}
+
+
 async function getAllPublic(perPage) {
-    var message = new Object;
-    message.id = 2;
-    console.log(message);
     return new Promise((resolve, reject) => {
         models.Message.findAll({
             raw: false,
             include: [{
                 model: models.User,
             }],
-
+            order: [['pub_date', 'DESC']]
         }).then((messages) => {
             var refinedMessages = [];
             messages.forEach((msg) => {
                 const msgData = msg.dataValues;
-                // console.log(msgData);
                 const userData = msgData.User.dataValues;
-                // console.log(userData);
                 refinedMessages.push(
                     {
                         message_id: msgData.message_id,
@@ -192,7 +258,7 @@ async function getAllPublic(perPage) {
             });
             resolve(refinedMessages);
         }).catch(err => reject(err));
-    }).catch((err) => {console.log(err)});
+    }).catch((err) => { console.log(err) });
 }
 
 async function addMessage(userId, text, date) {
@@ -202,7 +268,7 @@ async function addMessage(userId, text, date) {
             text: text,
             pub_date: date,
         }).then((messages) => resolve(messages)).catch(err => reject(err));
-    }).catch((err) => {console.log(err)});
+    }).catch((err) => { console.log(err) });
 }
 
 module.exports = {
@@ -216,4 +282,6 @@ module.exports = {
     getAllMessagesForUser,
     getAllPublic,
     addMessage,
+    getFollower,
+    getMessagesForUserProfile,
 };

@@ -6,7 +6,7 @@ module.exports = (sequelize, DataTypes) => {
     message_id: Sequelize.DataTypes.INTEGER,
     author_id: Sequelize.DataTypes.INTEGER,
     text: Sequelize.DataTypes.STRING,
-    pub_date: Sequelize.DataTypes.INTEGER,
+    pub_date: Sequelize.DataTypes.DATE,
     flagged: Sequelize.DataTypes.INTEGER,
     createdAt: Sequelize.DataTypes.DATE,
     updatedAt: Sequelize.DataTypes.DATE,

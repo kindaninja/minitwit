@@ -10,16 +10,20 @@ router.get('/', async function(req, res) {
     if(!req.session.user_id) {
         return res.redirect('/public')
     }
-    let messages = await db.selectAll(
-        `SELECT message.*, user.* FROM message, user
-                WHERE message.author_id = user.user_id AND (
-                    user.user_id = ? OR
-                    user.user_id IN (
-                        SELECT whom_id FROM follower
-                        WHERE who_id = ?))
-                ORDER BY message.pub_date DESC LIMIT ?`,
-        [req.session.user_id, req.session.user_id, PER_PAGE]
-    );
+
+
+    // let messages = await db.selectAll(
+    //     `SELECT message.*, user.* FROM message, user
+    //             WHERE message.author_id = user.user_id AND (
+    //                 user.user_id = ? OR
+    //                 user.user_id IN (
+    //                     SELECT whom_id FROM follower
+    //                     WHERE who_id = ?))
+    //             ORDER BY message.pub_date DESC LIMIT ?`,
+    //     [req.session.user_id, req.session.user_id, PER_PAGE]
+    // );
+
+    let messages = await db.getAllMessagesForUser(req.session.user_id, PER_PAGE);
     res.render('pages/timeline', {
         session_username: req.session.username,
         session_user_id: req.session.user_id,
@@ -65,13 +69,14 @@ router.post('/add_message', async function(req, res) {
         //         ORDER BY message.pub_date DESC LIMIT ?`,
         //     [req.session.user_id, req.session.user_id, PER_PAGE]
         // );
-        let messages = db.getAllPublic(PER_PAGE);
-        // console.log("!!!!!!!Messages!!!!!!!!" + messages);
+        let messages = await db.getAllMessagesForUser(req.session.user_id, PER_PAGE);
+        console.log(messages);
         return res.render('pages/timeline', {
             flashes: ['Your message was recorded'],
             session_user_id: req.session.user_id,
             session_username: req.session.username,
-            messages: messages["User"],
+            // messages: messages["User"],
+            messages: messages,
             myFeed: true
         });
     }
@@ -130,6 +135,7 @@ router.get('/login', function(req, res) {
 
 // Login handler
 router.post('/login', async function(req, res) {
+
     const username = req.body.username;
     const password = req.body.password;
     let error;
@@ -138,7 +144,10 @@ router.post('/login', async function(req, res) {
     } else if (!password) {
         error = 'You have to enter a password';
     } else {
-        const user = await db.selectOne('SELECT * FROM user WHERE username = ?',[username])
+        const userRaw = await db.getUser(username)
+        const user = userRaw.dataValues;
+
+
         if(!user) {
             error = 'Invalid username';
         } else if (user.pw_hash !== db.lameHash(password)) {
@@ -146,16 +155,19 @@ router.post('/login', async function(req, res) {
         } else {
             req.session.user_id = user.user_id;
             req.session.username = username;
-            let messages = await db.selectAll(
-                `SELECT message.*, user.* FROM message, user
-                WHERE message.author_id = user.user_id AND (
-                    user.user_id = ? OR
-                    user.user_id IN (
-                        SELECT whom_id FROM follower
-                        WHERE who_id = ?))
-                ORDER BY message.pub_date DESC LIMIT ?`,
-                [req.session.user_id, req.session.user_id, PER_PAGE]
-            );
+            // let messages = await db.selectAll(
+            //     `SELECT message.*, user.* FROM message, user
+            //     WHERE message.author_id = user.user_id AND (
+            //         user.user_id = ? OR
+            //         user.user_id IN (
+            //             SELECT whom_id FROM follower
+            //             WHERE who_id = ?))
+            //     ORDER BY message.pub_date DESC LIMIT ?`,
+            //     [req.session.user_id, req.session.user_id, PER_PAGE]
+            // );
+
+            let messages = await db.getAllMessagesForUser(req.session.user_id, PER_PAGE);
+
             return res.render('pages/timeline', {
                 flashes: ['You were logged in'],
                 session_user_id: req.session.user_id,
@@ -182,26 +194,26 @@ router.get('/logout', function(req, res) {
 // User timeline page
 router.get('/:username', async function(req, res) {
     const { username } = req.params;
-    let profile_user = await db.selectOne(
-        'SELECT * FROM user WHERE username = ?',
-        [username]);
+    let profile_user = await db.getUser(username);
     if(!profile_user) {
         return res.status(404).send();
     }
 
     let followed;
     if(req.session.user_id) {
-        followed = await db.selectOne(
-            'SELECT 1 FROM follower WHERE follower.who_id = ? and follower.whom_id = ?',
-            [req.session.user_id, profile_user.user_id]);
+        // followed = await db.selectOne(
+        //     'SELECT 1 FROM follower WHERE follower.who_id = ? and follower.whom_id = ?',
+        //     [req.session.user_id, profile_user.user_id]);
+        followed = await db.getFollower(req.session.user_id, profile_user.user_id);
     }
 
-    let messages = await db.selectAll(
-        `SELECT message.*, user.* FROM message, user WHERE
-                user.user_id = message.author_id AND user.user_id = ?
-                ORDER BY message.pub_date DESC LIMIT ?`,
-        [profile_user.user_id, PER_PAGE]
-    );
+    // let messages = await db.selectAll(
+    //     `SELECT message.*, user.* FROM message, user WHERE
+    //             user.user_id = message.author_id AND user.user_id = ?
+    //             ORDER BY message.pub_date DESC LIMIT ?`,
+    //     [profile_user.user_id, PER_PAGE]
+    // );
+    let messages = await db.getMessagesForUserProfile(profile_user.user_id, PER_PAGE);
 
     res.render('pages/timeline', {
         session_username: req.session.username,

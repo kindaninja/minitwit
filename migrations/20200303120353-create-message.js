@@ -21,7 +21,7 @@ module.exports = {
         allowNull: false,
       },
       pub_date: {
-        type: Sequelize.INTEGER
+        type: Sequelize.DATE
       },
       flagged: {
         type: Sequelize.INTEGER
