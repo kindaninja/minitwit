@@ -245,7 +245,7 @@ async function getFollower(sessionUserId, profileUserId) {
             where: {
                 who_id: sessionUserId,
                 whom_id: profileUserId,
-                
+
             }
         })
             .then(follower => resolve(follower))
