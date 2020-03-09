@@ -1,21 +1,25 @@
 'use strict';
+const Sequelize = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
-  const Follower = sequelize.define('Follower', {
+  const follower = sequelize.define('follower', {
     who_id: DataTypes.INTEGER,
     whom_id: DataTypes.INTEGER,
-    createdAt: DataTypes.DATE,
-    updatedAt: DataTypes.DATE,
-  }, {});
-  Follower.associate = function(models) {
-    Follower.belongsTo(models.User, {
-        targetKey: 'user_id',
-        foreignKey: 'who_id',
+    //createdAt: DataTypes.DATE,
+    //updatedAt: DataTypes.DATE,
+  }, {
+    freezeTableName: true,
+  });
+  follower.associate = function(models) {
+    follower.belongsTo(models.user, {
+      targetKey: 'user_id',
+      foreignKey: 'who_id',
     });
-    Follower.belongsTo(models.User, {
+    follower.belongsTo(models.user, {
       targetKey: 'user_id',
       foreignKey: 'whom_id',
     });
   };
-  return Follower;
+  follower.removeAttribute('id');
+  return follower;
 };

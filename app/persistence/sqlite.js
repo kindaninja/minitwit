@@ -4,7 +4,7 @@
 const sqlite3 = require('sqlite3').verbose();
 const models = require('../../models');
 const sequelize = require('sequelize');
-let db = new sqlite3.Database('/Users/rdmo/Documents/ITU/MSc\ Computer\ Science/2.\ Semester/DevOps/minitwit/app/persistence/minitwit.db', (err) => {
+/*let db = new sqlite3.Database('/Users/rdmo/Documents/ITU/MSc\ Computer\ Science/2.\ Semester/DevOps/minitwit/app/persistence/minitwit.db', (err) => {
     // let db = new sqlite3.Database('/tmp/minitwit.db', (err) => {
     if (err) {
         return console.error(err.message);
@@ -63,7 +63,7 @@ function deleteRows(query, params) {
             resolve(this.changes);
         });
     });
-}
+}*/
 
 // Lame password hash function
 // TODO Use proper hashing library, bcrypt maybe?
@@ -98,7 +98,7 @@ function lameHash(string) {
 // );
 async function getAllMessagesForUser(userId, perPage) {
     return new Promise((resolve, reject) => {
-        models.Follower.findAll({
+        models.follower.findAll({
             attributes: [
                 'whom_id'
             ],
@@ -106,10 +106,10 @@ async function getAllMessagesForUser(userId, perPage) {
                 who_id: userId,
             }
         }).then((followed) => {
-            models.Message.findAll({
+            models.message.findAll({
                 include: [
                     {
-                        model: models.User,
+                        model: models.user,
                     },
                 ],
                 where: {
@@ -131,24 +131,31 @@ async function getAllMessagesForUser(userId, perPage) {
                 // console.log("MESSAGESSSSSSSS");
 
                 // console.log(messages);
-                var refinedMessages = [];
-                messages.forEach((msg) => {
-                    const msgData = msg.dataValues;
-                    // console.log(msgData);
-                    const userData = msgData.User.dataValues;
-                    // console.log(userData);
-                    refinedMessages.push(
-                        {
-                            message_id: msgData.message_id,
-                            author_id: msgData.author_id,
-                            text: msgData.text,
-                            pub_date: msgData.pub_date,
-                            username: userData.username,
-                        }
-                    );
-                });
-                // console.log(refinedMessages);
-                resolve(refinedMessages);
+                if (messages) {
+                    reject()
+                }
+                else {
+                    var refinedMessages = [];
+                    messages.forEach((msg) => {
+                        console.log(msg)
+                        const msgData = msg.dataValues;
+                        // console.log(msgData);
+                        const userData = msgData.user.dataValues;
+                        // console.log(userData);
+                        refinedMessages.push(
+                            {
+                                message_id: msgData.message_id,
+                                author_id: msgData.author_id,
+                                text: msgData.text,
+                                pub_date: msgData.pub_date,
+                                username: userData.username,
+                            }
+                        );
+                    });
+                    // console.log(refinedMessages);
+                    resolve(refinedMessages);
+                }
+
             });
         });
 
@@ -160,7 +167,7 @@ async function getAllMessagesForUser(userId, perPage) {
 
 async function getUser(username) {
     return new Promise((resolve, reject) => {
-        var user = models.User.findOne({
+        var user = models.user.findOne({
             where: {
                 username: username
             },
@@ -179,10 +186,10 @@ async function getUser(username) {
 
 async function getMessagesForUserProfile(userId, perPage) {
     return new Promise((resolve, reject) => {
-        models.Message.findAll({
+        models.message.findAll({
             include: [
                 {
-                    model: models.User,
+                    model: models.user,
                 },
             ],
             where: {
@@ -197,7 +204,7 @@ async function getMessagesForUserProfile(userId, perPage) {
             messages.forEach((msg) => {
                 const msgData = msg.dataValues;
                 // console.log(msgData);
-                const userData = msgData.User.dataValues;
+                const userData = msgData.user.dataValues;
                 // console.log(userData);
                 refinedMessages.push(
                     {
@@ -219,7 +226,7 @@ async function getMessagesForUserProfile(userId, perPage) {
 
 async function createUser(username, email, password) {
     return new Promise((resolve, reject) => {
-        models.User.create({
+        models.user.create({
             username: username,
             email: email,
             pw_hash: password,
@@ -234,12 +241,11 @@ async function createUser(username, email, password) {
 
 async function getFollower(sessionUserId, profileUserId) {
     return new Promise((resolve, reject) => {
-        models.Follower.findOne({
+        models.follower.findOne({
             where: {
                 who_id: sessionUserId,
-                $and: {
-                    whom_id: profileUserId,
-                }
+                whom_id: profileUserId,
+                
             }
         })
             .then(follower => resolve(follower))
@@ -253,17 +259,18 @@ async function getFollower(sessionUserId, profileUserId) {
 
 async function getAllPublic(perPage) {
     return new Promise((resolve, reject) => {
-        models.Message.findAll({
+        models.message.findAll({
             raw: false,
             include: [{
-                model: models.User,
+                model: models.user,
             }],
-            order: [['pub_date', 'DESC']]
+            order: [['pub_date', 'DESC']],
+            limit: perPage,
         }).then((messages) => {
             var refinedMessages = [];
             messages.forEach((msg) => {
                 const msgData = msg.dataValues;
-                const userData = msgData.User.dataValues;
+                const userData = msgData.user.dataValues;
                 refinedMessages.push(
                     {
                         message_id: msgData.message_id,
@@ -281,7 +288,7 @@ async function getAllPublic(perPage) {
 
 async function addMessage(userId, text, date) {
     return new Promise((resolve, reject) => {
-        models.Message.create({
+        models.message.create({
             author_id: userId,
             text: text,
             pub_date: date,
@@ -290,11 +297,12 @@ async function addMessage(userId, text, date) {
 }
 
 async function follow(who, whom) {
+    console.log('whom ' + whom)
     return new Promise((resolve, reject) => {
-        models.Follower.create({
+        models.follower.create({
             who_id: who,
             whom_id: whom,
-        }).then(follower => resolve(follower)).catch((err) => reject());
+        }).then(follower => resolve(follower)).catch((err) => {console.log(err); reject()});
     })
 }
 
@@ -311,10 +319,10 @@ async function unfollow(who, whom) {
 }
 
 module.exports = {
-    selectOne,
+    /*selectOne,
     selectAll,
     insertOne,
-    deleteRows,
+    deleteRows,*/
     lameHash,
     getUser,
     createUser,

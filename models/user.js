@@ -1,28 +1,30 @@
 'use strict';
 module.exports = (sequelize, DataTypes) => {
-  const User = sequelize.define('User', {
-    user_id: DataTypes.INTEGER,
+  const user = sequelize.define('user', {
+    user_id: {type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true},
     username: DataTypes.STRING,
     email: DataTypes.STRING,
     pw_hash: DataTypes.STRING,
-    createdAt: DataTypes.DATE,
-    updatedAt: DataTypes.DATE,
+    //createdAt: DataTypes.DATE,
+    //updatedAt: DataTypes.DATE,
+  }, {
+    freezeTableName: true,
   });
-  User.associate = function(models) {
-      User.hasMany(models.Message, {
+  user.associate = function(models) {
+      user.hasMany(models.message, {
           foreignKey: 'author_id',
           onDelete: 'CASCADE',
       });
-      User.hasMany(models.Follower, {
+      user.hasMany(models.follower, {
           foreignKey: 'whom_id',
           onDelete: 'CASCASE',
       });
-      User.hasMany(models.Follower, {
+      user.hasMany(models.follower, {
           foreignKey: 'who_id',
           onDelete: 'CASCASE',
     });
     
     // associations can be defined here
   };
-  return User;
+  return user;
 };

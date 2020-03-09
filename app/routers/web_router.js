@@ -23,7 +23,7 @@ router.get('/', async function(req, res) {
     //     [req.session.user_id, req.session.user_id, PER_PAGE]
     // );
 
-    let messages = await db.getAllMessagesForUser(req.session.user_id, PER_PAGE);
+    let messages = await db.getAllPublic(PER_PAGE);
     res.render('pages/timeline', {
         session_username: req.session.username,
         session_user_id: req.session.user_id,
@@ -69,7 +69,7 @@ router.post('/add_message', async function(req, res) {
         //         ORDER BY message.pub_date DESC LIMIT ?`,
         //     [req.session.user_id, req.session.user_id, PER_PAGE]
         // );
-        let messages = await db.getAllMessagesForUser(req.session.user_id, PER_PAGE);
+        let messages = await db.getAllPublic(PER_PAGE);
         // console.log(messages);
         return res.render('pages/timeline', {
             flashes: ['Your message was recorded'],
@@ -110,9 +110,9 @@ router.post('/register', async function(req, res) {
         error = 'The username is already taken';
     } else {
         await db.createUser(username, email, db.lameHash(password));
-        await db.insertOne(
+        /*await db.insertOne(
             'INSERT INTO user(username, email, pw_hash) VALUES(?, ?, ?)',
-            [username, email, db.lameHash(password)]);
+            [username, email, db.lameHash(password)]);*/
         return res.render('pages/login', {
             username: username,
             flashes: ['You were successfully registered and can login now']
@@ -145,9 +145,7 @@ router.post('/login', async function(req, res) {
         error = 'You have to enter a password';
     } else {
         const userRaw = await db.getUser(username)
-        const user = userRaw.dataValues;
-
-
+        let user = !userRaw? null : userRaw.dataValues;
         if(!user) {
             error = 'Invalid username';
         } else if (user.pw_hash !== db.lameHash(password)) {
@@ -166,7 +164,7 @@ router.post('/login', async function(req, res) {
             //     [req.session.user_id, req.session.user_id, PER_PAGE]
             // );
 
-            let messages = await db.getAllMessagesForUser(req.session.user_id, PER_PAGE);
+            let messages = await db.getAllPublic(PER_PAGE);
 
             return res.render('pages/timeline', {
                 flashes: ['You were logged in'],
@@ -204,8 +202,8 @@ router.get('/:username', async function(req, res) {
         // followed = await db.selectOne(
         //     'SELECT 1 FROM follower WHERE follower.who_id = ? and follower.whom_id = ?',
         //     [req.session.user_id, profile_user.user_id]);
-        var follower = await db.getFollower(req.session.user_id, profile_user.user_id);
-        followed = follower? true : false;
+        followed = await db.getFollower(req.session.user_id, profile_user.user_id);
+        //followed = follower? true : false;
     }
 
     // let messages = await db.selectAll(
@@ -238,7 +236,7 @@ router.get('/:username/follow', async function(req, res) {
     if (!whom)
         res.status(404).send();
     // await db.insertOne('INSERT INTO follower (who_id, whom_id) VALUES (?, ?)', [req.session.user_id, whom.user_id])
-    await db.follow(req.session.user_id, whom.user_id);
+    await db.follow(req.session.user_id, whom.dataValues.user_id);
 
     return res.redirect('/' + username);
 });
