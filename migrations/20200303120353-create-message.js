@@ -3,13 +3,12 @@ module.exports = {
   up: (queryInterface, Sequelize) => {
     return queryInterface.createTable('Messages', {
       id: {
-        allowNull: false,
+        type: Sequelize.INTEGER,
         autoIncrement: true,
-        type: Sequelize.INTEGER
       },
       message_id: {
-        type: Sequelize.INTEGER,
         primaryKey: true,
+        type: Sequelize.INTEGER,
         autoIncrement: true,
       },
       author_id: {

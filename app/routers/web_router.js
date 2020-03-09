@@ -75,7 +75,6 @@ router.post('/add_message', async function(req, res) {
             flashes: ['Your message was recorded'],
             session_user_id: req.session.user_id,
             session_username: req.session.username,
-            // messages: messages["User"],
             messages: messages,
             myFeed: true
         });
@@ -145,14 +144,13 @@ router.post('/login', async function(req, res) {
         error = 'You have to enter a password';
     } else {
         const userRaw = await db.getUser(username)
-        const user = userRaw.dataValues;
-
-
+        let user = !userRaw? null : userRaw.dataValues;
         if(!user) {
             error = 'Invalid username';
         } else if (user.pw_hash !== db.lameHash(password)) {
             error = 'Invalid password';
         } else {
+
             req.session.user_id = user.user_id;
             req.session.username = username;
             // let messages = await db.selectAll(
@@ -167,12 +165,13 @@ router.post('/login', async function(req, res) {
             // );
 
             let messages = await db.getAllMessagesForUser(req.session.user_id, PER_PAGE);
-
+            console.log("messaasdakjshdkajhdklajshdkashdkshdaskjdhasjdhaskjdasjdhasjhdkjhs/&!%)#(/&");
+            console.log(messages);
             return res.render('pages/timeline', {
                 flashes: ['You were logged in'],
                 session_user_id: req.session.user_id,
                 session_username: req.session.username,
-                messages
+                messages: messages,
             });
         }
     }
@@ -204,8 +203,7 @@ router.get('/:username', async function(req, res) {
         // followed = await db.selectOne(
         //     'SELECT 1 FROM follower WHERE follower.who_id = ? and follower.whom_id = ?',
         //     [req.session.user_id, profile_user.user_id]);
-        var follower = await db.getFollower(req.session.user_id, profile_user.user_id);
-        followed = follower? true : false;
+        followed = await db.getFollower(req.session.user_id, profile_user.user_id);
     }
 
     // let messages = await db.selectAll(
@@ -215,7 +213,6 @@ router.get('/:username', async function(req, res) {
     //     [profile_user.user_id, PER_PAGE]
     // );
     let messages = await db.getMessagesForUserProfile(profile_user.user_id, PER_PAGE);
-    console.log(followed);
 
     res.render('pages/timeline', {
         session_username: req.session.username,
@@ -233,11 +230,10 @@ router.get('/:username/follow', async function(req, res) {
         res.status(401).send();
     // let whom = await db.selectOne('SELECT * FROM user WHERE username = ?',[username]);
     let whom = await db.getUser(username);
-    console.log("WHOM????");
-    console.log(whom);
     if (!whom)
         res.status(404).send();
     // await db.insertOne('INSERT INTO follower (who_id, whom_id) VALUES (?, ?)', [req.session.user_id, whom.user_id])
+    
     await db.follow(req.session.user_id, whom.user_id);
 
     return res.redirect('/' + username);

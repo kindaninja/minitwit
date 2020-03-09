@@ -11,6 +11,7 @@ module.exports = (sequelize, DataTypes) => {
   User.associate = function(models) {
       User.hasMany(models.Message, {
           foreignKey: 'author_id',
+          sourceKey: 'user_id',
           onDelete: 'CASCADE',
       });
       User.hasMany(models.Follower, {

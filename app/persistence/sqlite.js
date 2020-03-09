@@ -99,13 +99,14 @@ function lameHash(string) {
 async function getAllMessagesForUser(userId, perPage) {
     return new Promise((resolve, reject) => {
         models.Follower.findAll({
-            attributes: [
-                'whom_id'
-            ],
             where: {
                 who_id: userId,
             }
         }).then((followed) => {
+            let fl = followed.map((fllwr => fllwr.dataValues.who_id));
+            console.log(12345678909876543456789);
+            console.log(fl);
+            console.log(userId);
             models.Message.findAll({
                 include: [
                     {
@@ -113,24 +114,34 @@ async function getAllMessagesForUser(userId, perPage) {
                     },
                 ],
                 where: {
-                    author_id: userId,
-                    // $and: {
-                    //     user_id: userId,
+                    // author_id: userId,
+                    author_id: {
+                        [sequelize.Op.or]: {
+                            [sequelize.Op.in]: fl,
+                            $eq: userId,
+                        },
+                    }
                     // $or: {
-                    //     userId: {
-                    //         $in: followed,
+                    //     author_id: {
+                    //         $eq: 1
+                    //     },
+                    //     author_id: {
+                    //         $eq: 2
                     //     }
+                    
                     // }
-                    // }
+                    
+                    
                 },
+
 
 
                 order: [['pub_date', 'DESC']],
                 limit: perPage,
             }).then((messages) => {
-                // console.log("MESSAGESSSSSSSS");
+                console.log("MESSAGESSSSSSSS");
 
-                // console.log(messages);
+                console.log(messages);
                 var refinedMessages = [];
                 messages.forEach((msg) => {
                     const msgData = msg.dataValues;
@@ -149,7 +160,7 @@ async function getAllMessagesForUser(userId, perPage) {
                 });
                 // console.log(refinedMessages);
                 resolve(refinedMessages);
-            });
+            }).catch(err => console.log(err));
         });
 
 
@@ -190,15 +201,10 @@ async function getMessagesForUserProfile(userId, perPage) {
             },
             limit: perPage,
         }).then(messages => {
-            // console.log("MESSAGESSSSSSSS");
-
-            // console.log(messages);
             var refinedMessages = [];
             messages.forEach((msg) => {
                 const msgData = msg.dataValues;
-                // console.log(msgData);
                 const userData = msgData.User.dataValues;
-                // console.log(userData);
                 refinedMessages.push(
                     {
                         message_id: msgData.message_id,
@@ -209,7 +215,6 @@ async function getMessagesForUserProfile(userId, perPage) {
                     }
                 );
             });
-            // console.log(refinedMessages);
             resolve(refinedMessages);
         }).catch((err) => {
             console.log(err);
@@ -237,9 +242,7 @@ async function getFollower(sessionUserId, profileUserId) {
         models.Follower.findOne({
             where: {
                 who_id: sessionUserId,
-                $and: {
-                    whom_id: profileUserId,
-                }
+                whom_id: profileUserId,
             }
         })
             .then(follower => resolve(follower))
@@ -258,7 +261,8 @@ async function getAllPublic(perPage) {
             include: [{
                 model: models.User,
             }],
-            order: [['pub_date', 'DESC']]
+            order: [['pub_date', 'DESC']],
+            limit: perPage,
         }).then((messages) => {
             var refinedMessages = [];
             messages.forEach((msg) => {
@@ -300,14 +304,17 @@ async function follow(who, whom) {
 
 async function unfollow(who, whom) {
     return new Promise((resolve, reject) => {
-        getFollower(who, whom)
-            .then((follower) => {
-                follower.destroy()
-                    .then((response) => resolve(response))
-                    .catch((err) => reject())
-            })
-            .catch((err) => console.log(err));
+        models.Follower.destroy({
+            where: {
+                who_id: who,
+                whom_id: whom,
+            }
+        })
+            .then((response) =>
+                resolve(response))
+            .catch((err) => reject())
     })
+        .catch((err) => console.log(err));
 }
 
 module.exports = {
