@@ -6,7 +6,7 @@ services:
     restart: unless-stopped
     ports:
       - "8080"
-      - "9090"
+      - "7070"
     volumes:
       - /tmp:/tmp
     command:
@@ -23,18 +23,13 @@ services:
     image: prom/prometheus:latest
     volumes:
       - ./prom/prometheus.yml:/etc/prometheus/prometheus.yml
-    command: "--config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus"
     ports:
-      - "7070:7070"
-    depends_on:
-      - exporter
-    exporter:
-      image: prom/node-exporter:latest
-      ports:
-        - "9100:9100"
-    grafana:
-      image: grafana/grafana
-      ports:
-        - "3000:3000"
-      depends_on:
-        - prom
+      - "9090:9090"
+  exporter:
+    image: prom/node-exporter:latest
+    ports:
+      - "9100:9100"
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
