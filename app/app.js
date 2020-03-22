@@ -33,10 +33,10 @@ web.listen(8080, () => console.log('Minitwit web app listening on port 8080.'));
 const api = express();
 api.use(express.json());
 
-api.use('/', apiRouter)
 api.use(promMid({
     metricsPath: '/metrics',
     collectDefaultMetrics: true,
     requestDurationBuckets: [0.1, 0.5, 1, 1.5]
 }));
+api.use('/', apiRouter)
 api.listen(7070, () => console.log('Minitwit API listening on port 9090.'));
