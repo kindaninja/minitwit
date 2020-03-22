@@ -1,4 +1,5 @@
 const express = require('express');
+const logger = require('../utils/logger');
 const db = require('../persistence/postgres');
 const helpers = require('../utils/helpers');
 const router = express.Router();
