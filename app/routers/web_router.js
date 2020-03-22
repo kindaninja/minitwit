@@ -1,5 +1,5 @@
 const express = require('express');
-const db = require('../persistence/sqlite');
+const db = require('../persistence/postgres');
 const helpers = require('../utils/helpers');
 const router = express.Router();
 
@@ -11,13 +11,14 @@ router.get('/', async function(req, res) {
         return res.redirect('/public')
     }
     let messages = await db.selectAll(
-        `SELECT message.*, user.* FROM message, user
-                WHERE message.author_id = user.user_id AND (
-                    user.user_id = ? OR
-                    user.user_id IN (
-                        SELECT whom_id FROM follower
-                        WHERE who_id = ?))
-                ORDER BY message.pub_date DESC LIMIT ?`,
+        `SELECT * FROM message m
+                LEFT JOIN "user" u ON m.author_id = u.user_id
+                WHERE (
+                u.user_id = $1 OR
+                u.user_id IN (
+                SELECT whom_id FROM follower
+                WHERE who_id = $2))
+                ORDER BY m.pub_date DESC LIMIT $3`,
         [req.session.user_id, req.session.user_id, PER_PAGE]
     );
     res.render('pages/timeline', {
@@ -32,9 +33,9 @@ router.get('/', async function(req, res) {
 // Public timeline page
 router.get('/public', async function(req, res) {
     let messages = await db.selectAll(
-        `select message.*, user.* from message, user
-                where message.author_id = user.user_id
-                order by message.pub_date desc limit ?`,
+        `SELECT * FROM message m
+                LEFT JOIN "user" u ON m.author_id = u.user_id
+                ORDER BY m.pub_date DESC LIMIT $1`,
         [PER_PAGE]
     );
     res.render('pages/timeline', {
@@ -53,16 +54,17 @@ router.post('/add_message', async function(req, res) {
         return res.status(401).send();
     } else {
         await db.insertOne(
-            'INSERT INTO message(author_id, text, pub_date) VALUES(?, ?, ?)',
+            'INSERT INTO message(author_id, text, pub_date) VALUES($1, $2, $3)',
             [user_id, text, Date.now()])
         let messages = await db.selectAll(
-            `SELECT message.*, user.* FROM message, user
-                WHERE message.author_id = user.user_id AND (
-                    user.user_id = ? OR
-                    user.user_id IN (
-                        SELECT whom_id FROM follower
-                        WHERE who_id = ?))
-                ORDER BY message.pub_date DESC LIMIT ?`,
+            `SELECT * FROM message m
+                    LEFT JOIN "user" u ON m.author_id = u.user_id
+                    WHERE (
+                    u.user_id = $1 OR
+                    u.user_id IN (
+                    SELECT whom_id FROM follower
+                    WHERE who_id = $2))
+                    ORDER BY m.pub_date DESC LIMIT $3`,
             [req.session.user_id, req.session.user_id, PER_PAGE]
         );
         return res.render('pages/timeline', {
@@ -99,11 +101,11 @@ router.post('/register', async function(req, res) {
         error = 'You have to enter a password';
     } else if (password !== password2) {
         error = 'The two passwords do not match';
-    } else if (await db.selectOne('SELECT 1 FROM user WHERE username = ?',[username])) {
+    } else if (await db.selectOne('SELECT 1 FROM "user" WHERE username = $1',[username])) {
         error = 'The username is already taken';
     } else {
         await db.insertOne(
-            'INSERT INTO user(username, email, pw_hash) VALUES(?, ?, ?)',
+            'INSERT INTO "user"(username, email, pw_hash) VALUES($1, $2, $3)',
             [username, email, db.lameHash(password)]);
         return res.render('pages/login', {
             username: username,
@@ -135,7 +137,7 @@ router.post('/login', async function(req, res) {
     } else if (!password) {
         error = 'You have to enter a password';
     } else {
-        const user = await db.selectOne('SELECT * FROM user WHERE username = ?',[username])
+        const user = await db.selectOne('SELECT * FROM "user" WHERE username = $1',[username])
         if(!user) {
             error = 'Invalid username';
         } else if (user.pw_hash !== db.lameHash(password)) {
@@ -144,13 +146,14 @@ router.post('/login', async function(req, res) {
             req.session.user_id = user.user_id;
             req.session.username = username;
             let messages = await db.selectAll(
-                `SELECT message.*, user.* FROM message, user
-                WHERE message.author_id = user.user_id AND (
-                    user.user_id = ? OR
-                    user.user_id IN (
+                `SELECT * FROM message m
+                        LEFT JOIN "user" u ON m.author_id = u.user_id
+                        WHERE (
+                        u.user_id = $1 OR
+                        u.user_id IN (
                         SELECT whom_id FROM follower
-                        WHERE who_id = ?))
-                ORDER BY message.pub_date DESC LIMIT ?`,
+                        WHERE who_id = $2))
+                        ORDER BY m.pub_date DESC LIMIT $3`,
                 [req.session.user_id, req.session.user_id, PER_PAGE]
             );
             return res.render('pages/timeline', {
@@ -181,7 +184,7 @@ router.get('/logout', function(req, res) {
 router.get('/:username', async function(req, res) {
     const { username } = req.params;
     let profile_user = await db.selectOne(
-        'SELECT * FROM user WHERE username = ?',
+        'SELECT * FROM "user" WHERE username = $1',
         [username]);
     if(!profile_user) {
         return res.status(404).send();
@@ -190,14 +193,15 @@ router.get('/:username', async function(req, res) {
     let followed;
     if(req.session.user_id) {
         followed = await db.selectOne(
-            'SELECT 1 FROM follower WHERE follower.who_id = ? and follower.whom_id = ?',
+            'SELECT 1 FROM follower WHERE follower.who_id = $1 and follower.whom_id = $2',
             [req.session.user_id, profile_user.user_id]);
     }
 
     let messages = await db.selectAll(
-        `SELECT message.*, user.* FROM message, user WHERE
-                user.user_id = message.author_id AND user.user_id = ?
-                ORDER BY message.pub_date DESC LIMIT ?`,
+        `SELECT * FROM message m
+                LEFT JOIN "user" u ON m.author_id = u.user_id
+                WHERE u.user_id = $1
+                ORDER BY m.pub_date DESC LIMIT $2`,
         [profile_user.user_id, PER_PAGE]
     );
 
@@ -216,10 +220,10 @@ router.get('/:username/follow', async function(req, res) {
     const { username } = req.params;
     if (!req.session.user_id)
         res.status(401).send();
-    let whom = await db.selectOne('SELECT * FROM user WHERE username = ?',[username]);
+    let whom = await db.selectOne('SELECT * FROM "user" WHERE username = $1',[username]);
     if (!whom)
         res.status(404).send();
-    await db.insertOne('INSERT INTO follower (who_id, whom_id) VALUES (?, ?)', [req.session.user_id, whom.user_id])
+    await db.insertOne('INSERT INTO follower (who_id, whom_id) VALUES ($1, $2)', [req.session.user_id, whom.user_id])
 
     return res.redirect('/' + username);
 });
@@ -228,10 +232,10 @@ router.get('/:username/unfollow', async function(req, res) {
     const { username } = req.params;
     if (!req.session.user_id)
         res.status(401).send();
-    let whom = await db.selectOne('SELECT * FROM user WHERE username = ?',[username]);
+    let whom = await db.selectOne('SELECT * FROM "user" WHERE username = $1',[username]);
     if (!whom)
         res.status(404).send();
-    await db.deleteRows('DELETE FROM follower WHERE who_id = ? AND whom_id = ?', [req.session.user_id, whom.user_id]);
+    await db.deleteRows('DELETE FROM follower WHERE who_id = $1 AND whom_id = $2', [req.session.user_id, whom.user_id]);
 
     return res.redirect('/' + username);
 });
