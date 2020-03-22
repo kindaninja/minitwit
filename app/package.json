@@ -9,11 +9,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@log4js-node/logstash-http": "^1.0.0",
     "cookie-parser": "^1.4.4",
     "ejs": "^3.0.1",
     "express": "^4.17.1",
     "express-prometheus-middleware": "^0.8.5",
     "express-session": "^1.17.0",
+    "log4js": "^6.1.2",
     "pg": "^7.18.2",
     "sqlite3": "^4.1.1"
   }
