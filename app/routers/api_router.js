@@ -33,7 +33,7 @@ router.post('/register', async function(req, res) {
         return res.status(204).send();
 
     }
-    return res.json({"status": 400, "error_msg": error}).status(400).send();
+    return res.status(400).json({"status": 400, "error_msg": error});
 });
 
 // Public timeline page
@@ -42,7 +42,7 @@ router.get('/msgs', async function(req, res) {
     let not_from_sim = notReqFromSimulator(req);
     if (not_from_sim) {
         let error = "You are not authorized to use this resource!";
-        return res.json({"status": 403, "error_msg": error}).status(403).send();
+        return res.status(403).json({"status": 403, "error_msg": error});
     }
 
     let no_msgs = req.query.no ? req.query.no : 100;
@@ -70,7 +70,7 @@ router.get('/msgs/:username', async function(req, res) {
     let not_from_sim = notReqFromSimulator(req);
     if (not_from_sim) {
         let error = "You are not authorized to use this resource!";
-        return res.json({"status": 403, "error_msg": error}).status(403).send();
+        return res.status(403).json({"status": 403, "error_msg": error});
     }
     const { username } = req.params;
     let no_msgs = req.query.no ? req.query.no : 100;
@@ -107,7 +107,7 @@ router.post('/msgs/:username', async function (req, res) {
     let not_from_sim = notReqFromSimulator(req);
     if (not_from_sim) {
         let error = "You are not authorized to use this resource!";
-        return res.json({"status": 403, "error_msg": error}).status(403).send();
+        return res.status(403).json({"status": 403, "error_msg": error});
     }
     const { username } = req.params;
     let profile_user = await db.selectOne(
@@ -133,7 +133,7 @@ router.get('/fllws/:username', async function (req, res) {
     let not_from_sim = notReqFromSimulator(req);
     if (not_from_sim) {
         let error = "You are not authorized to use this resource!";
-        return res.json({"status": 403, "error_msg": error}).status(403).send();
+        return res.status(403).json({"status": 403, "error_msg": error});
     }
     const { username } = req.params;
 
@@ -168,7 +168,7 @@ router.post('/fllws/:username', async function (req, res) {
     let not_from_sim = notReqFromSimulator(req);
     if (not_from_sim) {
         let error = "You are not authorized to use this resource!";
-        return res.json({"status": 403, "error_msg": error}).status(403).send();
+        return res.status(403).json({"status": 403, "error_msg": error});
     }
     const { username } = req.params;
 
