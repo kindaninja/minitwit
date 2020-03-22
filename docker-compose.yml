@@ -19,10 +19,10 @@ services:
       - "80:80"
     volumes:
       - ./nginx:/etc/nginx/
-  prom:
+  prometheus:
     image: prom/prometheus:latest
     volumes:
-      - ./prom/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
   exporter:
@@ -31,5 +31,12 @@ services:
       - "9100:9100"
   grafana:
     image: grafana/grafana
+    volumes:
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+      - grafana-storage:/var/lib/grafana
+    environment:
+      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s/monitor/
     ports:
       - "3000:3000"
+volumes:
+  grafana-storage:
