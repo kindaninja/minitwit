@@ -1,4 +1,5 @@
 const express = require('express');
+const logger = require('../utils/logger');
 const db = require('../persistence/postgres');
 const router = express.Router();
 
@@ -7,6 +8,7 @@ let LATEST = 0;
 
 // Get latest value
 router.get('/latest', function (req, res) {
+    logger.info("API endpoint /latest returned " + LATEST);
     return res.json({"latest": LATEST});
 });
 
@@ -16,7 +18,6 @@ router.post('/register', async function(req, res) {
     const username = req.body.username;
     const email = req.body.email;
     const password = req.body.pwd;
-    console.log(username, email, password);
     let error;
     if(!username) {
         error = 'You have to enter a username';
@@ -30,9 +31,11 @@ router.post('/register', async function(req, res) {
         await db.insertOne(
             'INSERT INTO "user"(username, email, pw_hash) VALUES($1, $2, $3)',
             [username, email, db.lameHash(password)]);
+        logger.info("API endpoint /register succeeded and registered user " + username);
         return res.status(204).send();
 
     }
+    logger.error("API endpoint /register failed with error: " + error);
     return res.status(400).json({"status": 400, "error_msg": error});
 });
 
@@ -42,6 +45,7 @@ router.get('/msgs', async function(req, res) {
     let not_from_sim = notReqFromSimulator(req);
     if (not_from_sim) {
         let error = "You are not authorized to use this resource!";
+        logger.error("API endpoint /msgs failed with error: " + error);
         return res.status(403).json({"status": 403, "error_msg": error});
     }
 
@@ -61,6 +65,7 @@ router.get('/msgs', async function(req, res) {
         filteredMsg["user"] = msg["username"];
         filteredMsgs.push(filteredMsg);
     });
+    logger.info("API endpoint /msgs succeeded");
     return res.json(filteredMsgs);
 });
 
@@ -70,6 +75,7 @@ router.get('/msgs/:username', async function(req, res) {
     let not_from_sim = notReqFromSimulator(req);
     if (not_from_sim) {
         let error = "You are not authorized to use this resource!";
+        logger.error("API GET endpoint /msgs/:username failed with error: " + error);
         return res.status(403).json({"status": 403, "error_msg": error});
     }
     const { username } = req.params;
@@ -80,6 +86,7 @@ router.get('/msgs/:username', async function(req, res) {
         [username]);
 
     if(!profile_user) {
+        logger.error("API GET endpoint /msgs/:username could not find user id " + profile_user.user_id);
         return res.status(404).send();
     }
 
@@ -99,6 +106,7 @@ router.get('/msgs/:username', async function(req, res) {
         filteredMsgs.push(filteredMsg);
     });
 
+    logger.info("API GET endpoint /msgs/:username succeeded");
     return res.json(filteredMsgs);
 });
 
@@ -108,6 +116,7 @@ router.post('/msgs/:username', async function (req, res) {
     let not_from_sim = notReqFromSimulator(req);
     if (not_from_sim) {
         let error = "You are not authorized to use this resource!";
+        logger.error("API POST endpoint /msgs/:username failed with error: " + error);
         return res.status(403).json({"status": 403, "error_msg": error});
     }
     const { username } = req.params;
@@ -116,6 +125,7 @@ router.post('/msgs/:username', async function (req, res) {
         [username]);
 
     if(!profile_user) {
+        logger.error("API POST endpoint /msgs/:username could not find user id " + profile_user.user_id);
         return res.status(404).send();
     }
 
@@ -125,6 +135,7 @@ router.post('/msgs/:username', async function (req, res) {
         'INSERT INTO message(author_id, text, pub_date) VALUES($1, $2, $3)',
         [profile_user.user_id, content, Date.now()]);
 
+    logger.info("API POST endpoint /msgs/:username succeeded");
     return res.status(204).send();
 });
 
@@ -134,6 +145,7 @@ router.get('/fllws/:username', async function (req, res) {
     let not_from_sim = notReqFromSimulator(req);
     if (not_from_sim) {
         let error = "You are not authorized to use this resource!";
+        logger.error("API GET endpoint /fllws/:username failed with error: " + error);
         return res.status(403).json({"status": 403, "error_msg": error});
     }
     const { username } = req.params;
@@ -143,6 +155,7 @@ router.get('/fllws/:username', async function (req, res) {
         [username]);
 
     if(!profile_user) {
+        logger.error("API GET endpoint /fllws/:username could not find user id " + profile_user.user_id);
         return res.status(404).send();
     }
 
@@ -160,6 +173,7 @@ router.get('/fllws/:username', async function (req, res) {
         followers_names.push(follower["username"])
     });
 
+    logger.info("API GET endpoint /fllws/:username succeeded");
     return res.json({"follows": followers_names});
 });
 
@@ -169,6 +183,7 @@ router.post('/fllws/:username', async function (req, res) {
     let not_from_sim = notReqFromSimulator(req);
     if (not_from_sim) {
         let error = "You are not authorized to use this resource!";
+        logger.error("API POST endpoint /fllws/:username failed with error: " + error);
         return res.status(403).json({"status": 403, "error_msg": error});
     }
     const { username } = req.params;
@@ -178,6 +193,7 @@ router.post('/fllws/:username', async function (req, res) {
         [username]);
 
     if(!profile_user) {
+        logger.error("API POST endpoint /fllws/:username could not find user id " + profile_user.user_id);
         return res.status(404).send();
     }
 
@@ -188,6 +204,7 @@ router.post('/fllws/:username', async function (req, res) {
             [follow_username]);
 
         if (!follows_user) {
+            logger.error("API POST endpoint /fllws/:username could not find and follow user id " + follows_user.user_id);
             return res.status(404).send();
         }
 
@@ -195,6 +212,7 @@ router.post('/fllws/:username', async function (req, res) {
             'INSERT INTO follower (who_id, whom_id) VALUES ($1, $2)',
             [profile_user.user_id, follows_user.user_id]);
 
+        logger.info("API POST endpoint /fllws/:username succeeded - " + profile_user.user_id + " now following" + follows_user.user_id);
         return res.status(204).send();
     }
 
@@ -205,6 +223,7 @@ router.post('/fllws/:username', async function (req, res) {
             [unfollow_username]);
 
         if (!unfollows_user){
+            logger.error("API POST endpoint /fllws/:username could not find and unfollow user id " + unfollows_user.user_id);
             return res.status(404).send();
         }
 
@@ -212,6 +231,7 @@ router.post('/fllws/:username', async function (req, res) {
             'DELETE FROM follower WHERE who_id = $1 AND whom_id = $2',
             [profile_user.user_id, unfollows_user.user_id]);
 
+        logger.info("API POST endpoint /fllws/:username succeeded - " + profile_user.user_id + " now unfollowing" + unfollows_user.user_id);
         return res.status(204).send();
     }
 });
