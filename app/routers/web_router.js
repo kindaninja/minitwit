@@ -9,6 +9,7 @@ const PER_PAGE = 20;
 // Home (User feed or redirect to public timeline)
 router.get('/', async function(req, res) {
     if(!req.session.user_id) {
+        logger.info("Redirecting to public");
         return res.redirect('/public')
     }
     let messages = await db.selectAll(
@@ -22,6 +23,7 @@ router.get('/', async function(req, res) {
                 ORDER BY m.pub_date DESC LIMIT $3`,
         [req.session.user_id, req.session.user_id, PER_PAGE]
     );
+    logger.info("Rendering pages/timeline");
     res.render('pages/timeline', {
         session_username: req.session.username,
         session_user_id: req.session.user_id,
@@ -39,6 +41,7 @@ router.get('/public', async function(req, res) {
                 ORDER BY m.pub_date DESC LIMIT $1`,
         [PER_PAGE]
     );
+    logger.info("Rendering pages/timeline");
     res.render('pages/timeline', {
         session_username: req.session.username,
         session_user_id: req.session.user_id,
@@ -52,6 +55,7 @@ router.post('/add_message', async function(req, res) {
     const user_id = req.session.user_id;
     const text = req.body.text;
     if(!user_id) {
+        logger.error("User not logged in");
         return res.status(401).send();
     } else {
         await db.insertOne(
@@ -68,6 +72,7 @@ router.post('/add_message', async function(req, res) {
                     ORDER BY m.pub_date DESC LIMIT $3`,
             [req.session.user_id, req.session.user_id, PER_PAGE]
         );
+        logger.info("Rendering pages/timeline");
         return res.render('pages/timeline', {
             flashes: ['Your message was recorded'],
             session_user_id: req.session.user_id,
@@ -81,6 +86,7 @@ router.post('/add_message', async function(req, res) {
 
 // Register page
 router.get('/register', function(req, res) {
+    logger.info("Rendering pages/register");
     res.render('pages/register', {
         username: '',
         email: '',
@@ -108,12 +114,14 @@ router.post('/register', async function(req, res) {
         await db.insertOne(
             'INSERT INTO "user"(username, email, pw_hash) VALUES($1, $2, $3)',
             [username, email, db.lameHash(password)]);
+        logger.info("User registered - Rendering pages/login");
         return res.render('pages/login', {
             username: username,
             flashes: ['You were successfully registered and can login now']
         });
 
     }
+    logger.error("Could not register with error: " + error);
     res.render('pages/register', {
         username: username,
         email: email,
@@ -123,6 +131,7 @@ router.post('/register', async function(req, res) {
 
 // Login page
 router.get('/login', function(req, res) {
+    logger.info("Rendering pages/login");
     res.render('pages/login', {
         username: '',
     });
@@ -157,6 +166,7 @@ router.post('/login', async function(req, res) {
                         ORDER BY m.pub_date DESC LIMIT $3`,
                 [req.session.user_id, req.session.user_id, PER_PAGE]
             );
+            logger.info("User logged in - Rendering pages/timeline");
             return res.render('pages/timeline', {
                 flashes: ['You were logged in'],
                 session_user_id: req.session.user_id,
@@ -166,6 +176,7 @@ router.post('/login', async function(req, res) {
             });
         }
     }
+    logger.error("Could not login with error: " + error);
     res.render('pages/login', {
         username: username,
         error: error
@@ -176,6 +187,7 @@ router.post('/login', async function(req, res) {
 router.get('/logout', function(req, res) {
     req.session.user_id = null;
     req.session.username = null;
+    logger.info("User logged out - Rendering pages/timeline");
     res.render('pages/timeline', {
         flashes: ['You were logged out']
     });
@@ -188,6 +200,7 @@ router.get('/:username', async function(req, res) {
         'SELECT * FROM "user" WHERE username = $1',
         [username]);
     if(!profile_user) {
+        logger.error("User not logged in");
         return res.status(404).send();
     }
 
@@ -206,6 +219,7 @@ router.get('/:username', async function(req, res) {
         [profile_user.user_id, PER_PAGE]
     );
 
+    logger.info("Rendering pages/timeline");
     res.render('pages/timeline', {
         session_username: req.session.username,
         session_user_id: req.session.user_id,
@@ -219,30 +233,37 @@ router.get('/:username', async function(req, res) {
 
 router.get('/:username/follow', async function(req, res) {
     const { username } = req.params;
-    if (!req.session.user_id)
-        res.status(401).send();
+    if (!req.session.user_id) {
+        logger.error("Could not follow - User not logged in");
+        return res.status(401).send();
+    }
     let whom = await db.selectOne('SELECT * FROM "user" WHERE username = $1',[username]);
-    if (!whom)
-        res.status(404).send();
+    if (!whom) {
+        logger.error("Could not follow - User to follow not found");
+        return res.status(404).send();
+    }
     await db.insertOne('INSERT INTO follower (who_id, whom_id) VALUES ($1, $2)', [req.session.user_id, whom.user_id])
 
+    logger.info("User id " + req.session.user_id + " followed user id " + whom.user_id);
     return res.redirect('/' + username);
 });
 
 router.get('/:username/unfollow', async function(req, res) {
     const { username } = req.params;
-    if (!req.session.user_id)
-        res.status(401).send();
+    if (!req.session.user_id) {
+        logger.error("Could not unfollow - User not logged in");
+        return res.status(401).send();
+    }
     let whom = await db.selectOne('SELECT * FROM "user" WHERE username = $1',[username]);
-    if (!whom)
-        res.status(404).send();
+    if (!whom) {
+        logger.error("Could not unfollow - User to unfollow not found");
+        return res.status(404).send();
+    }
     await db.deleteRows('DELETE FROM follower WHERE who_id = $1 AND whom_id = $2', [req.session.user_id, whom.user_id]);
 
+    logger.info("User id " + req.session.user_id + " unfollowed user id " + whom.user_id);
     return res.redirect('/' + username);
 });
-
-
-
 
 
 module.exports = router;
