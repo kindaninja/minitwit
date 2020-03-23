@@ -86,7 +86,7 @@ router.get('/msgs/:username', async function(req, res) {
         [username]);
 
     if(!profile_user) {
-        logger.error("API GET endpoint /msgs/:username could not find user id " + profile_user.user_id);
+        logger.error("API GET endpoint /msgs/:username could not find user with username: " + username);
         return res.status(404).send();
     }
 
@@ -125,7 +125,7 @@ router.post('/msgs/:username', async function (req, res) {
         [username]);
 
     if(!profile_user) {
-        logger.error("API POST endpoint /msgs/:username could not find user id " + profile_user.user_id);
+        logger.error("API POST endpoint /msgs/:username could not find user with username: " + username);
         return res.status(404).send();
     }
 
@@ -155,7 +155,7 @@ router.get('/fllws/:username', async function (req, res) {
         [username]);
 
     if(!profile_user) {
-        logger.error("API GET endpoint /fllws/:username could not find user id " + profile_user.user_id);
+        logger.error("API GET endpoint /fllws/:username could not find user with username: " + username);
         return res.status(404).send();
     }
 
@@ -193,7 +193,7 @@ router.post('/fllws/:username', async function (req, res) {
         [username]);
 
     if(!profile_user) {
-        logger.error("API POST endpoint /fllws/:username could not find user id " + profile_user.user_id);
+        logger.error("API POST endpoint /fllws/:username could not find user with username: " + username);
         return res.status(404).send();
     }
 
@@ -204,7 +204,7 @@ router.post('/fllws/:username', async function (req, res) {
             [follow_username]);
 
         if (!follows_user) {
-            logger.error("API POST endpoint /fllws/:username could not find and follow user id " + follows_user.user_id);
+            logger.error("API POST endpoint /fllws/:username could not follow user with username: " + follow_username);
             return res.status(404).send();
         }
 
@@ -223,7 +223,7 @@ router.post('/fllws/:username', async function (req, res) {
             [unfollow_username]);
 
         if (!unfollows_user){
-            logger.error("API POST endpoint /fllws/:username could not find and unfollow user id " + unfollows_user.user_id);
+            logger.error("API POST endpoint /fllws/:username could not unfollow user with username: "  + unfollow_username);
             return res.status(404).send();
         }
 
