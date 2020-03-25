@@ -27,11 +27,11 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.retention.size=5GB'
     ports:
-      - "9090:9090"
+      - "9090"
   exporter:
     image: prom/node-exporter:latest
     ports:
-      - "9100:9100"
+      - "9100"
   grafana:
     image: grafana/grafana
     volumes:
@@ -78,8 +78,8 @@ services:
     ports:
       - "5000/tcp"
       - "5000/udp"
-      - "9600:9600"
-      - "9696:9696"
+      - "9600"
+      - "9696"
     environment:
       LS_JAVA_OPTS: "-Xmx256m -Xms256m"
     depends_on:
