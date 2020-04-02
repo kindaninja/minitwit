@@ -1,4 +1,8 @@
 language: minimal
+
+git:
+  depth: false
+
 branches:
   only:
   - master
