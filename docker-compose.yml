@@ -40,7 +40,7 @@ services:
     environment:
       - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s/monitor/
     ports:
-      - "3000:3000"
+      - "3000"
   elasticsearch:
     build:
       context: elasticsearch/
