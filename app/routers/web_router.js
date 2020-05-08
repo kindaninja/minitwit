@@ -1,7 +1,6 @@
 const express = require('express');
 const logger = require('../utils/logger');
 const db = require('../persistence/postgres');
-const helpers = require('../utils/helpers');
 const router = express.Router();
 
 const PER_PAGE = 20;
@@ -29,7 +28,7 @@ router.get('/', async function(req, res) {
         session_user_id: req.session.user_id,
         messages: messages,
         myFeed: true,
-        helpers: helpers
+        prettyDate
     });
 });
 
@@ -46,7 +45,7 @@ router.get('/public', async function(req, res) {
         session_username: req.session.username,
         session_user_id: req.session.user_id,
         messages: messages,
-        helpers: helpers
+        prettyDate
     });
 });
 
@@ -79,7 +78,7 @@ router.post('/add_message', async function(req, res) {
             session_username: req.session.username,
             messages: messages,
             myFeed: true,
-            helpers: helpers
+            prettyDate
         });
     }
 });
@@ -172,7 +171,7 @@ router.post('/login', async function(req, res) {
                 session_user_id: req.session.user_id,
                 session_username: req.session.username,
                 messages,
-                helpers: helpers
+                prettyDate
             });
         }
     }
@@ -227,7 +226,7 @@ router.get('/:username', async function(req, res) {
         profile_user_id: profile_user.user_id,
         followed: !!followed,
         messages: messages,
-        helpers: helpers
+        prettyDate
     });
 });
 
@@ -265,5 +264,9 @@ router.get('/:username/unfollow', async function(req, res) {
     return res.redirect('/' + username);
 });
 
+function prettyDate(millis) {
+    let date = new Date(parseInt(millis));
+    return date.toLocaleString();
+}
 
 module.exports = router;

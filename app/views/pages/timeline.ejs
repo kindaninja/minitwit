@@ -45,7 +45,7 @@
             <p>
                 <strong><a href="/<%= msg.username %>"><%= msg.username %></a></strong>
                 <%= msg.text %>
-                <small>&mdash; <%= helpers.prettyDate(msg.pub_date) %></small>
+                <small>&mdash; <%= prettyDate(msg.pub_date) %></small>
             </p>
         </li>
         <% }) %>
