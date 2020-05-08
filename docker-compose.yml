@@ -1,8 +1,19 @@
 version: '3.2'
 services:
-  app:
+  app-node-1:
     build: ./app
-    container_name: app
+    container_name: app1
+    restart: unless-stopped
+    ports:
+      - "8080"
+      - "7070"
+    volumes:
+      - /tmp:/tmp
+    command:
+      "node app.js"
+  app-node-2:
+    build: ./app
+    container_name: app2
     restart: unless-stopped
     ports:
       - "8080"
