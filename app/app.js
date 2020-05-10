@@ -38,5 +38,5 @@ api.use(promMid({
     collectDefaultMetrics: true,
     requestDurationBuckets: [0.1, 0.5, 1, 1.5]
 }));
-api.use('/', apiRouter)
-api.listen(7070, () => console.log('Minitwit API listening on port 9090.'));
+api.use('/api', apiRouter)
+api.listen(7070, () => console.log('Minitwit API listening on port 7070.'));

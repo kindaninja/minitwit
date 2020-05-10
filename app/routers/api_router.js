@@ -212,7 +212,7 @@ router.post('/fllws/:username', async function (req, res) {
             'INSERT INTO follower (who_id, whom_id) VALUES ($1, $2)',
             [profile_user.user_id, follows_user.user_id]);
 
-        logger.info("API POST endpoint /fllws/:username succeeded - " + profile_user.user_id + " now following" + follows_user.user_id);
+        logger.info("API POST endpoint /fllws/:username succeeded - " + profile_user.username + " now following " + follows_user.username);
         return res.status(204).send();
     }
 
@@ -231,7 +231,7 @@ router.post('/fllws/:username', async function (req, res) {
             'DELETE FROM follower WHERE who_id = $1 AND whom_id = $2',
             [profile_user.user_id, unfollows_user.user_id]);
 
-        logger.info("API POST endpoint /fllws/:username succeeded - " + profile_user.user_id + " now unfollowing" + unfollows_user.user_id);
+        logger.info("API POST endpoint /fllws/:username succeeded - " + profile_user.username + " now unfollowing " + unfollows_user.username);
         return res.status(204).send();
     }
 });
